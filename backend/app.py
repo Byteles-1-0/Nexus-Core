@@ -7,6 +7,7 @@ if current_dir not in sys.path:
     sys.path.insert(0, current_dir)
 
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 from dotenv import load_dotenv
 
 # Importa l'estensione e i modelli
@@ -17,6 +18,7 @@ from api.contracts_routes import contracts_bp
 load_dotenv()
 
 app = Flask(__name__)
+CORS(app)  # Abilita CORS per tutte le rotte
 
 # Usa __file__ per ottenere sempre il path corretto di app.py
 basedir = os.path.abspath(os.path.dirname(__file__))
@@ -47,6 +49,10 @@ with app.app_context():
 # Middleware Multi-Tenant GLOBALE
 @app.before_request
 def require_tenant_id():
+    # Gestione richieste OPTIONS (preflight CORS)
+    if request.method == 'OPTIONS':
+        return
+        
     # Escludiamo health e la rotta di download dei PDF (se il frontend scarica tramite tag <iframe> o <img> potrebbe non avere l'header)
     # NB: In produzione, il download PDF andrebbe protetto con un token via URL.
     if request.path.startswith('/health') or request.path.startswith('/api/v1/contracts/download/'):
