@@ -153,15 +153,25 @@ async function startWelcomeAnalysis() {
         // Step 3: Recognition complete
         updateProcessingStep(3, 'Riconoscimento completato!');
 
-        // Extract company name
+        // Extract company name (used implicitly for sidebar)
         const companyName = analysisResult?.anagrafica?.cliente_ragione_sociale || 'Cliente';
 
         // Wait a moment, then show greeting
         await sleep(800);
 
         // Show greeting
-        $('#greeting-company-name').textContent = companyName;
         setWelcomePhase('greeting');
+
+        // Start multi-language animation - updated to just Benvenuti with fade-in
+        const titleHtml = document.getElementById('greeting-multi-title');
+        if(titleHtml) {
+            titleHtml.textContent = 'Benvenuti';
+            // Start transparent, text is scaled down, then add show-lang to trigger CSS transition
+            titleHtml.className = 'greeting-multi-title';
+            setTimeout(() => {
+                titleHtml.className = 'greeting-multi-title show-lang';
+            }, 100);
+        }
 
     } catch (err) {
         showToast(err.message || 'Errore durante l\'elaborazione.', 'error');
@@ -237,6 +247,7 @@ function switchView(viewName) {
         dashboard: 'Dashboard',
         upload: 'Carica Contratto',
         contracts: 'Contratti',
+        radar: 'Risk Radar',
         topclients: 'Top Clients',
         advisor: 'AI Advisor',
         detail: 'Dettaglio Contratto'
@@ -252,6 +263,8 @@ function switchView(viewName) {
             renderContractsKpiAndAnomalies();
             renderMap();
         });
+    } else if (viewName === 'radar') {
+        renderRadar();
     } else if (viewName === 'topclients') {
         renderTopClients();
     } else if (viewName === 'advisor') {
@@ -438,7 +451,6 @@ async function loadContracts() {
         const res = await fetch(`${API_BASE}/list`, { headers: { 'X-Tenant-ID': TENANT_ID } });
         const data = await res.json();
         if (res.ok && data.status === 'success') {
-            renderDashboard(data.data);
             renderContractsTable(data.data);
             if ($('#view-overview').classList.contains('active')) {
                 renderOverview();
@@ -469,42 +481,8 @@ async function loadContractDetail(contractId) {
 
 // ============ RENDERERS ============
 function renderDashboard(contracts) {
-    const total = contracts.length;
-    const active = contracts.filter(c => c.status === 'ACTIVE').length;
-    const freader = contracts.filter(c => c.prodotto === 'Freader').length;
-    const cutai = contracts.filter(c => c.prodotto === 'CutAI').length;
-
-    $('#stat-total').textContent = total;
-    $('#stat-active').textContent = active;
-    $('#stat-freader').textContent = freader;
-    $('#stat-cutai').textContent = cutai;
-
-    const container = $('#dashboard-table-body');
-    if (total === 0) {
-        container.innerHTML = `
-            <div class="empty-state">
-                <i class="ri-inbox-line"></i>
-                <p>Nessun contratto caricato</p>
-                <button class="btn btn--primary" onclick="switchView('upload')">
-                    <i class="ri-upload-cloud-2-line"></i> Carica il primo contratto
-                </button>
-            </div>`;
-        return;
-    }
-
-    const rows = contracts.slice(0, 10).map(c => `
-        <tr onclick="loadContractDetail('${c.id}')">
-            <td>${escapeHtml(c.cliente)}</td>
-            <td><span class="badge ${c.prodotto === 'Freader' ? 'badge--purple' : 'badge--warning'}">${c.prodotto}</span></td>
-            <td><span class="badge ${c.status === 'ACTIVE' ? 'badge--success' : 'badge--info'}">${c.status}</span></td>
-            <td>${c.versioni}</td>
-        </tr>`).join('');
-
-    container.innerHTML = `
-        <table class="data-table">
-            <thead><tr><th>Cliente</th><th>Prodotto</th><th>Stato</th><th>Ver.</th></tr></thead>
-            <tbody>${rows}</tbody>
-        </table>`;
+    // Obsoleto: le viste originali di index.html sono state rimosse e sostituite con view-overview.
+    // Funzione mantenuta vuota per evitare eccezioni in loadContracts.
 }
 
 function renderContractsTable(contracts) {
@@ -929,6 +907,30 @@ function renderTopClients() {
                 `).join('')}
             </tbody>
         </table>
+    `;
+}
+
+function renderRadar() {
+    $('#radar-container').innerHTML = MOCK_DATA.anomalies.map(a => `
+        <div style="flex: 1 1 300px; background: rgba(255,255,255,0.02); border: 1px solid ${a.alert === 'alta' ? 'var(--color-danger)' : 'var(--border-color)'}; padding: 1.5rem; border-radius: var(--radius-md);">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 1rem;">
+                <h3 style="margin: 0; font-size: 1.1rem; color: var(--text-primary);">${a.client}</h3>
+                <span class="badge ${a.alert === 'alta' ? 'badge--danger' : 'badge--warning'}">${a.alert.toUpperCase()}</span>
+            </div>
+            <p style="color: var(--text-primary); font-weight: 600; font-size: 0.95rem; margin-bottom: 0.5rem;"><i class="ri-alert-line"></i> ${a.title}</p>
+            <p style="color: var(--text-secondary); font-size: 0.85rem; line-height: 1.4;">${a.desc}</p>
+            <button class="btn btn--sm btn--primary" style="margin-top: 1rem; width: 100%;">Mitiga Rischio KPI</button>
+        </div>
+    `).join('') + `
+        <div style="flex: 1 1 300px; background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); padding: 1.5rem; border-radius: var(--radius-md);">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 1rem;">
+                <h3 style="margin: 0; font-size: 1.1rem; color: var(--text-primary);">Previsioni Churn</h3>
+                <span class="badge badge--info">PREVISIONE</span>
+            </div>
+            <p style="color: var(--text-primary); font-weight: 600; font-size: 0.95rem; margin-bottom: 0.5rem;"><i class="ri-user-unfollow-line"></i> Cyberdyne Risk: 45%</p>
+            <p style="color: var(--text-secondary); font-size: 0.85rem; line-height: 1.4;">Comportamento cliente a rischio. Consumo licenze sceso del 20% in 1 mese.</p>
+            <button class="btn btn--sm btn--ghost" style="margin-top: 1rem; width: 100%;">Guarda Report Churn</button>
+        </div>
     `;
 }
 

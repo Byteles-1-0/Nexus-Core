@@ -112,14 +112,16 @@
 
             <!-- PHASE 3: Welcome greeting -->
             <div class="welcome-phase" id="welcome-phase-greeting">
-                <div class="greeting-container">
-                    <div class="greeting-checkmark">
-                        <i class="ri-checkbox-circle-line"></i>
+                <div class="greeting-multi-lang-container">
+                    <h1 class="greeting-multi-title" id="greeting-multi-title">Benvenuti</h1>
+                </div>
+                <!-- Div fade-in delayed for the button -->
+                <div class="greeting-container greeting-fade-in" style="position: absolute; bottom: 10%; z-index: 10; width: 100%; left: 0; right: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                    <div class="greeting-checkmark" style="background: rgba(99, 102, 241, 0.1); border-color: rgba(99, 102, 241, 0.3); width: 60px; height: 60px; font-size: 1.8rem; margin-bottom: 1.5rem;">
+                        <i class="ri-check-double-line" style="color: var(--accent);"></i>
                     </div>
-                    <h1 class="greeting-title">Benvenuti,</h1>
-                    <h2 class="greeting-company" id="greeting-company-name"></h2>
-                    <p class="greeting-subtitle">Il contratto è stato analizzato con successo. Verifica i dati estratti e conferma il salvataggio.</p>
-                    <button class="welcome-btn-start" id="greeting-btn-continue">
+                    <p class="greeting-subtitle" style="font-size: 1.1rem; color: rgba(255,255,255,0.8); max-width: 600px; margin: 0 auto 2rem auto; line-height: 1.6; text-align: center;">Il contratto è stato analizzato con successo dall'AI.<br>Verifica i dati estratti e procedi all'importazione.</p>
+                    <button class="welcome-btn-start" id="greeting-btn-continue" style="width: auto; min-width: 300px; padding: 1rem 3rem; box-shadow: 0 0 20px rgba(99, 102, 241, 0.3); margin: 0 auto;">
                         <i class="ri-file-list-3-line"></i>
                         <span>Visualizza Analisi</span>
                         <i class="ri-arrow-right-line"></i>
@@ -167,6 +169,12 @@
                     <a href="#" class="nav-link" data-view="contracts" id="nav-contracts">
                         <i class="ri-folder-shield-2-line"></i>
                         <span>Contratti</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#" class="nav-link" data-view="radar" id="nav-radar">
+                        <i class="ri-radar-line"></i>
+                        <span>Risk Radar</span>
                     </a>
                 </li>
                 <li>
@@ -416,6 +424,20 @@
                     </div>
                     <div class="card-body" id="topclients-container">
                         <!-- Popolato da JS -->
+                    </div>
+                </div>
+            </section>
+            
+            <!-- VIEW: RISK RADAR -->
+            <section class="view" id="view-radar">
+                <div class="card">
+                    <div class="card-header">
+                        <h2><i class="ri-radar-fill" style="color:var(--color-danger);"></i> Radar delle Criticità</h2>
+                    </div>
+                    <div class="card-body">
+                        <div id="radar-container" style="display: flex; gap: 1.5rem; flex-wrap: wrap;">
+                            <!-- Popolato da JS -->
+                        </div>
                     </div>
                 </div>
             </section>
