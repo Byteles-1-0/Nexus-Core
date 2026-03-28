@@ -86,3 +86,36 @@ class CutAIContractVersion(db.Model):
     # Audit
     valid_from = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     created_by = db.Column(db.String(100), nullable=False)
+
+# ==========================================
+# CONTRATTI DINAMICI (Schema-Agnostic)
+# ==========================================
+
+class DynamicContract(db.Model):
+    __tablename__ = 'dynamic_contracts'
+    id = db.Column(db.String(36), primary_key=True)
+    tenant_id = db.Column(db.String(36), db.ForeignKey('tenants.id'), nullable=False)
+    product_name = db.Column(db.String(100), nullable=False)  # Nome prodotto rilevato dall'AI
+    cliente_ragione_sociale = db.Column(db.String(255), nullable=False)
+    cliente_sede_legale = db.Column(db.String(255), nullable=False)
+    status = db.Column(db.String(20), default='DRAFT')
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    
+    versions = db.relationship('DynamicContractVersion', backref='contract', lazy=True, order_by='desc(DynamicContractVersion.version_number)')
+
+class DynamicContractVersion(db.Model):
+    __tablename__ = 'dynamic_contract_versions'
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    contract_id = db.Column(db.String(36), db.ForeignKey('dynamic_contracts.id'), nullable=False)
+    version_number = db.Column(db.Integer, nullable=False)
+    
+    # Dati estratti in formato JSON flessibile
+    extracted_data = db.Column(db.JSON, nullable=False)  # Contiene tutte le coppie chiave-valore estratte dall'AI
+    
+    # Metadati dell'analisi
+    document_type = db.Column(db.String(100))  # Tipo di documento identificato
+    confidence_score = db.Column(db.Float)  # Score di confidenza dell'AI
+    
+    # Audit
+    valid_from = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    created_by = db.Column(db.String(100), nullable=False)

@@ -1,6 +1,6 @@
 import uuid
 from extensions import db  # <-- Importa da qui
-from models import FreaderContract, FreaderContractVersion, CutAIContract, CutAIContractVersion
+from models import FreaderContract, FreaderContractVersion, CutAIContract, CutAIContractVersion, DynamicContract, DynamicContractVersion
 
 def parse_int(val, default=0):
     try:
@@ -101,4 +101,50 @@ def save_contract_to_db(tenant_id, extracted_data, created_by="AI_Extraction_Sys
 
     except Exception as e:
         db.session.rollback()
+        raise e
+
+
+def save_dynamic_contract_to_db(tenant_id, analysis_result, created_by="AI_Dynamic_System"):
+    """
+    Salva un contratto con struttura dinamica (non Freader/CutAI).
+    Utilizza il modello DynamicContract che memorizza i dati in formato JSON.
+    """
+    try:
+        new_contract_id = str(uuid.uuid4())
+        
+        metadata = analysis_result.get('metadata', {})
+        anagrafica = analysis_result.get('anagrafica', {})
+        extracted_data = analysis_result.get('extracted_data', [])
+        
+        # 1. Crea Contratto Radice Dinamico
+        contract = DynamicContract(
+            id=new_contract_id,
+            tenant_id=tenant_id,
+            product_name=metadata.get('product_name', 'Prodotto Sconosciuto'),
+            cliente_ragione_sociale=anagrafica.get('cliente_ragione_sociale', 'Sconosciuto'),
+            cliente_sede_legale=anagrafica.get('cliente_sede_legale', 'Sconosciuta'),
+            status='ACTIVE'
+        )
+        db.session.add(contract)
+        
+        # 2. Crea Versione 1 con dati JSON
+        version = DynamicContractVersion(
+            contract_id=new_contract_id,
+            version_number=1,
+            extracted_data=extracted_data,  # Salva l'array di coppie chiave-valore
+            document_type=metadata.get('document_type', 'Contratto'),
+            confidence_score=metadata.get('confidence_score', 0.0),
+            created_by=created_by
+        )
+        db.session.add(version)
+        
+        # Commit della transazione
+        db.session.commit()
+        
+        print(f"✅ Contratto dinamico salvato: {contract.product_name} (ID: {new_contract_id})")
+        return new_contract_id
+
+    except Exception as e:
+        db.session.rollback()
+        print(f"❌ Errore nel salvataggio del contratto dinamico: {e}")
         raise e
