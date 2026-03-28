@@ -64,4 +64,5 @@ def health_check():
     return jsonify({"status": "success", "message": "API online e operative."}), 200
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5002)
+    # Modificato da 0.0.0.0 a 127.0.0.1
+    app.run(debug=True, host='127.0.0.1', port=5001)

@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+ENV/
+
+
+# Database locale (SQLite)
+backend/instance/
+*.db
+
+# File caricati dagli utenti
+backend/uploads/*
+!backend/uploads/.gitkeep
+
+# Editor e Sistema
+.vscode/
+.DS_Store
+*.log
+
+# Byte-compiled / optimized / DLL files
+__pycache__/

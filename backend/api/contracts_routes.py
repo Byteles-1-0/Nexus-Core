@@ -1,9 +1,55 @@
 from flask import Blueprint, request, jsonify, current_app, send_from_directory
 from werkzeug.utils import secure_filename
-from extensions import db  # <-- Importa da qui
+import os
+
+from extensions import db
 from models import FreaderContract, CutAIContract, FreaderContractVersion, CutAIContractVersion
+from service.db_service import save_contract_to_db
+from service.ai_service import analyze_contract_text
+from utils.parser import parse_document
 
 contracts_bp = Blueprint('contracts', __name__)
+
+
+@contracts_bp.route('/upload-and-analyze', methods=['POST'])
+def upload_and_analyze():
+    # 1. Verifica file
+    if 'file' not in request.files:
+        return jsonify({"status": "error", "message": "Nessun file fornito"}), 400
+        
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({"status": "error", "message": "Nome file vuoto"}), 400
+
+    # 2. Salvataggio temporaneo
+    filename = secure_filename(file.filename)
+    filepath = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
+    file.save(filepath)
+
+    try:
+        # 3. Estrazione testo (OCR o DOCX)
+        print(f"📄 Estrazione testo da {filename}...")
+        text = parse_document(filepath)
+        
+        if not text or len(text.strip()) < 10:
+            return jsonify({"status": "error", "message": "Impossibile estrarre testo dal documento"}), 422
+
+        # 4. Analisi con LLM
+        print(f"🧠 Analisi IA in corso...")
+        analysis_result = analyze_contract_text(text)
+
+        # 5. Ritorna il JSON all'utente per la verifica
+        return jsonify({
+            "status": "success",
+            "data": {
+                "filename": filename,
+                "analysis": analysis_result
+            }
+        }), 200
+
+    except Exception as e:
+        print(f"❌ Errore durante il processo: {str(e)}")
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 # ==========================================
 # 1. UPLOAD (POST)

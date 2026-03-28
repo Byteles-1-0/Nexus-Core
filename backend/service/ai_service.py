@@ -69,7 +69,7 @@ Testo del Contratto:
     
     try:
         response = client.chat.completions.create(
-            model="Llama-3.3-70B-Instruct",
+            model="gpt-oss-20b",
             messages=[
                 {"role": "system", "content": "Sei un estrattore dati JSON B2B. Rispondi SOLO con JSON valido e formattato correttamente."},
                 {"role": "user", "content": prompt}
