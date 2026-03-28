@@ -1662,7 +1662,7 @@ code {
 .greeting-fade-in {
     opacity: 0;
     transform: translateY(20px);
-    animation: fadeInUp 1s ease 4s forwards;
+    animation: fadeInUp 1s ease 1.3s forwards;
 }
 
 @keyframes fadeInUp {

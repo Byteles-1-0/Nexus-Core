@@ -4,6 +4,7 @@
    ============================================ */
 
 const API_BASE = 'http://localhost:5001/api/v1/contracts';
+const API_DASHBOARD = 'http://localhost:5001/api';
 const HEALTH_URL = 'http://localhost:5001/health';
 const TENANT_ID = 'tenant-test-123';
 
@@ -679,94 +680,34 @@ window.loadContractDetail = loadContractDetail;
 // CONTRACTIQ MOCK DATA & RENDERERS
 // ============================================
 
-// --- MOCK DATA ---
-const MOCK_DATA = {
-    overviewKpi: [
-        { title: 'Fatturato Annuo', value: '€ 1.2M', desc: '+15% YoY', color: 'blue', icon: 'ri-money-euro-circle-line' },
-        { title: 'Margine Operativo', value: '42%', desc: '+3% MoM', color: 'green', icon: 'ri-line-chart-line' },
-        { title: 'Contratti Attivi', value: '1,420', desc: '14 in scadenza', color: 'purple', icon: 'ri-check-double-line' },
-        { title: 'Churn Rate', value: '2.1%', desc: '-0.5% YoY', color: 'orange', icon: 'ri-user-unfollow-line' }
-    ],
-    expiring: [
-        { client: 'TechCorp Srl', days: 12, value: '€ 4.5k/trim', prod: 'Freader' },
-        { client: 'Acme Group', days: 28, value: '€ 12k/trim', prod: 'CutAI' },
-        { client: 'Global Retail', days: 45, value: '€ 2.1k/trim', prod: 'Freader' }
-    ],
-    costs: {
-        totale: {
-            kpi: [
-                { title: 'Costi Fissi', value: '€ 120k', color: 'blue', icon: 'ri-building-line' },
-                { title: 'Costi Variabili', value: '€ 45k', color: 'orange', icon: 'ri-arrow-up-down-line' },
-                { title: 'Costo Medio / Contratto', value: '€ 116', color: 'green', icon: 'ri-pie-chart-line' }
-            ],
-            fissi: [
-                { voce: 'Server & Infrastruttura', importo: '€ 50,000', tipo: 'Diretto' },
-                { voce: 'Personale R&D', importo: '€ 45,000', tipo: 'Indiretto' },
-                { voce: 'Licenze Software esterne', importo: '€ 25,000', tipo: 'Diretto' }
-            ],
-            variabili: [
-                { voce: 'Token API OpenAI', constMedio: '€ 0.05 / doc', tipo: 'Diretto' },
-                { voce: 'Storage AWS S3', constMedio: '€ 0.02 / GB', tipo: 'Diretto' },
-                { voce: 'Customer Success Support', constMedio: '€ 15.00 / tkt', tipo: 'Indiretto' }
-            ]
-        },
-        freader: {
-            kpi: [
-                { title: 'Costi Fissi', value: '€ 40k', color: 'blue', icon: 'ri-building-line' },
-                { title: 'Costi Variabili', value: '€ 15k', color: 'orange', icon: 'ri-arrow-up-down-line' },
-                { title: 'Costo Medio / Contratto', value: '€ 85', color: 'green', icon: 'ri-pie-chart-line' }
-            ],
-            fissi: [ { voce: 'Server OCR Dedicato', importo: '€ 15,000', tipo: 'Diretto' } ],
-            variabili: [ { voce: 'Librerie Parsing', constMedio: '€ 0.01 / doc', tipo: 'Diretto' } ]
-        },
-        cutai: {
-            kpi: [
-                { title: 'Costi Fissi', value: '€ 80k', color: 'blue', icon: 'ri-building-line' },
-                { title: 'Costi Variabili', value: '€ 30k', color: 'orange', icon: 'ri-arrow-up-down-line' },
-                { title: 'Costo Medio / Contratto', value: '€ 142', color: 'green', icon: 'ri-pie-chart-line' }
-            ],
-            fissi: [ { voce: 'Cluster GPU AI', importo: '€ 60,000', tipo: 'Diretto' } ],
-            variabili: [ { voce: 'Token LLM HD', constMedio: '€ 0.15 / doc', tipo: 'Diretto' } ]
-        }
-    },
-    topClients: [
-        { rank: 1, name: 'Stark Industries', score: 98, level: 'Eccellente', canone: '€ 120k/anno' },
-        { rank: 2, name: 'Wayne Enterprises', score: 92, level: 'Eccellente', canone: '€ 95k/anno' },
-        { rank: 3, name: 'LexCorp', score: 75, level: 'Buono', canone: '€ 55k/anno' },
-        { rank: 4, name: 'Oscorp', score: 65, level: 'Nella media', canone: '€ 32k/anno' },
-        { rank: 5, name: 'Cyberdyne Systems', score: 45, level: 'Da migliorare', canone: '€ 15k/anno' }
-    ],
-    advisor: [
-        { title: 'Rischio Churn: Cyberdyne', desc: 'L\'utilizzo della piattaforma è sceso del 40% nell\'ultimo mese. Suggeriamo una chiamata di Customer Success per verificare l\'adozione.', type: 'Retention', action: 'Pianifica Review' },
-        { title: 'Upsell Opportunità Freader', desc: '14 clienti hanno superato l\'80% del limite crediti fascia 1. Propongo upgrade automatico alla Fascia 2 con sconto del 10%.', type: 'Pricing', action: 'Avvia Campagna Upsell' },
-        { title: 'Diversificazione Cliente', desc: 'Stark Industries rappresenta il 15% del fatturato totale. Considera di acquisire clienti mid-market per ridurre il rischio.', type: 'Risk Management', action: 'Visualizza Analisi Mercato' }
-    ],
-    anomalies: [
-        { alert: 'alta', title: 'Pagamento Scaduto (>60gg)', client: 'Oscorp', desc: 'Mancato pagamento fattura Q3 2025.' },
-        { alert: 'media', title: 'Violazione SLA', client: 'LexCorp', desc: 'Uptime inferiore al 99.9% nel mese scorso. Rimborso previsto.' }
-    ],
-    mapData: [
-        { city: 'Milano', cx: '35%', cy: '25%', count: 450 },
-        { city: 'Roma', cx: '50%', cy: '50%', count: 320 },
-        { city: 'Torino', cx: '25%', cy: '30%', count: 180 },
-        { city: 'Napoli', cx: '60%', cy: '65%', count: 150 },
-        { city: 'Bologna', cx: '45%', cy: '35%', count: 120 }
-    ]
-};
+// --- MOCK DATA REMOVED ---
 
 // --- RENDERERS ---
 function renderOverview() {
     const grid = $('#kpi-grid');
     if(!grid) return;
-    grid.innerHTML = MOCK_DATA.overviewKpi.map(k => `
-        <div class="stat-card">
-            <div class="stat-icon stat-icon--${k.color}"><i class="${k.icon}"></i></div>
-            <div class="stat-info">
-                <span class="stat-value">${k.value}</span>
-                <span class="stat-label">${k.title} <span style="font-size:0.75rem; color:var(--accent); margin-left:8px;">${k.desc}</span></span>
-            </div>
-        </div>
-    `).join('');
+    
+    // Fetch KPI Data
+    fetch(`${API_DASHBOARD}/kpi`)
+        .then(res => res.json())
+        .then(kpi => {
+            let overviewKpi = [
+                { title: 'Fatturato Annuo', value: '€ ' + (kpi.fatturato_totale/1000).toFixed(0) + 'k', desc: `+${kpi.yoy_growth.toFixed(1)}% YoY`, color: 'blue', icon: 'ri-money-euro-circle-line' },
+                { title: 'Margine Operativo', value: kpi.margine_pct + '%', desc: `+${kpi.mom_margine.toFixed(1)}% MoM`, color: 'green', icon: 'ri-line-chart-line' },
+                { title: 'Contratti Attivi', value: kpi.attivi, desc: `${kpi.in_scadenza_90} in scadenza`, color: 'purple', icon: 'ri-check-double-line' },
+                { title: 'Tasso di Crescita', value: kpi.mom_growth + '%', desc: 'Mensile', color: 'orange', icon: 'ri-trend-up-line' }
+            ];
+            grid.innerHTML = overviewKpi.map(k => `
+                <div class="stat-card">
+                    <div class="stat-icon stat-icon--${k.color}"><i class="${k.icon}"></i></div>
+                    <div class="stat-info">
+                        <span class="stat-value">${k.value}</span>
+                        <span class="stat-label">${k.title} <span style="font-size:0.75rem; color:var(--accent); margin-left:8px;">${k.desc}</span></span>
+                    </div>
+                </div>
+            `).join('');
+        })
+        .catch(err => console.error(err));
 
     const tableBody = $('#overview-table-body');
     if(window._allContracts && window._allContracts.length > 0) {
@@ -788,169 +729,198 @@ function renderOverview() {
 
     const expList = $('#expiring-list');
     if(expList) {
-        expList.innerHTML = MOCK_DATA.expiring.map(e => `
-            <div class="anomaly-item hs-${e.days < 15 ? 'alta' : 'media'}" style="margin-bottom:0.5rem; cursor:pointer;" onclick="switchView('contracts')">
-                <div style="flex:1;">
-                    <div class="a-title">${e.client}</div>
-                    <div class="a-desc">Scade in ${e.days} giorni — ${e.prod}</div>
-                </div>
-                <div class="a-client">${e.value}</div>
-            </div>
-        `).join('');
+        fetch(`${API_DASHBOARD}/expiring`)
+            .then(res => res.json())
+            .then(expData => {
+                expList.innerHTML = expData.map(e => `
+                    <div class="anomaly-item hs-${e.giorni_scadenza < 60 ? 'alta' : 'media'}" style="margin-bottom:0.5rem; cursor:pointer;" onclick="switchView('contracts')">
+                        <div style="flex:1;">
+                            <div class="a-title">${e.cliente}</div>
+                            <div class="a-desc">Scade il ${e.scadenza} — ${e.prodotto}</div>
+                        </div>
+                        <div class="a-client">€ ${e.canone_trim}/trim</div>
+                    </div>
+                `).join('');
+            })
+            .catch(err => console.error(err));
     }
 }
 
 function renderCosts(prod) {
-    const data = MOCK_DATA.costs[prod];
-    
     $$('.seg-btn').forEach(b => b.classList.remove('active'));
     $(`.seg-btn[data-prod="${prod}"]`).classList.add('active');
 
-    $('#costs-kpi-grid').innerHTML = data.kpi.map(k => `
-        <div class="stat-card">
-            <div class="stat-icon stat-icon--${k.color}"><i class="${k.icon}"></i></div>
-            <div class="stat-info">
-                <span class="stat-value">${k.value}</span>
-                <span class="stat-label">${k.title}</span>
-            </div>
-        </div>
-    `).join('');
+    fetch(`${API_DASHBOARD}/costs/${prod}`)
+        .then(res => res.json())
+        .then(data => {
+            let kpi = [
+                { title: 'Costi Fissi', value: '€ '+(data.tot_fissi/1000).toFixed(0)+'k', color: 'blue', icon: 'ri-building-line' },
+                { title: 'Costi Variabili', value: '€ '+(data.tot_variabili/1000).toFixed(0)+'k', color: 'orange', icon: 'ri-arrow-up-down-line' },
+                { title: 'Costo Medio / Contratto', value: '€ '+data.costo_unit_trad.toFixed(0), color: 'green', icon: 'ri-pie-chart-line' }
+            ];
 
-    $('#costi-fissi-table').innerHTML = `
-        <table class="data-table">
-            <thead><tr><th>Voce Costo</th><th>Tipologia</th><th>Importo</th></tr></thead>
-            <tbody>${data.fissi.map(f => `<tr><td>${f.voce}</td><td><span class="badge badge--info">${f.tipo}</span></td><td><strong>${f.importo}</strong></td></tr>`).join('')}</tbody>
-        </table>`;
+            $('#costs-kpi-grid').innerHTML = kpi.map(k => `
+                <div class="stat-card">
+                    <div class="stat-icon stat-icon--${k.color}"><i class="${k.icon}"></i></div>
+                    <div class="stat-info">
+                        <span class="stat-value">${k.value}</span>
+                        <span class="stat-label">${k.title}</span>
+                    </div>
+                </div>
+            `).join('');
 
-    $('#costi-variabili-table').innerHTML = `
-        <table class="data-table">
-            <thead><tr><th>Voce Costo</th><th>Tipologia</th><th>Costo Unitario</th></tr></thead>
-            <tbody>${data.variabili.map(v => `<tr><td>${v.voce}</td><td><span class="badge badge--purple">${v.tipo}</span></td><td><strong>${v.constMedio}</strong></td></tr>`).join('')}</tbody>
-        </table>`;
+            $('#costi-fissi-table').innerHTML = `
+                <table class="data-table">
+                    <thead><tr><th>Voce Costo</th><th>Tipologia</th><th>Importo</th></tr></thead>
+                    <tbody>${data.fissi.map(f => `<tr><td>${f.voce}</td><td><span class="badge badge--info">${f.tipo}</span></td><td><strong>€ ${f.importo.toLocaleString('it-IT')}</strong></td></tr>`).join('')}</tbody>
+                </table>`;
+
+            $('#costi-variabili-table').innerHTML = `
+                <table class="data-table">
+                    <thead><tr><th>Voce Costo</th><th>Tipologia</th><th>Costo Unitario</th></tr></thead>
+                    <tbody>${data.variabili.map(v => `<tr><td>${v.voce}</td><td><span class="badge badge--purple">${v.tipo}</span></td><td><strong>${v.unita || 'N/A'}</strong></td></tr>`).join('')}</tbody>
+                </table>`;
+        })
+        .catch(err => console.error(err));
 }
 
 function renderContractsKpiAndAnomalies() {
-    $('#contracts-kpi-grid').innerHTML = `
-        <div class="stat-card">
-            <div class="stat-icon stat-icon--blue"><i class="ri-folder-shield-2-line"></i></div>
-            <div class="stat-info"><span class="stat-value">${window._allContracts ? window._allContracts.length : 0}</span><span class="stat-label">Contratti Totali</span></div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-icon stat-icon--green"><i class="ri-checkbox-circle-line"></i></div>
-            <div class="stat-info"><span class="stat-value">${window._allContracts ? window._allContracts.filter(c=>c.status==='ACTIVE').length : 0}</span><span class="stat-label">Attivi</span></div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-icon stat-icon--danger"><i class="ri-error-warning-line"></i></div>
-            <div class="stat-info"><span class="stat-value">${MOCK_DATA.anomalies.length}</span><span class="stat-label">Anomalie Rilevate</span></div>
-        </div>
-    `;
-
-    $('#anomalies-container').innerHTML = `
-        <div class="card" style="border-color:var(--color-danger); background: var(--color-danger-bg);">
-            <div class="card-header" style="border-bottom:none; padding-bottom:0;">
-                <h2 style="color:var(--color-danger);"><i class="ri-alarm-warning-fill"></i> Attenzione: ${MOCK_DATA.anomalies.length} anomalie riscontrate</h2>
-            </div>
-            <div class="card-body">
-                <div class="anomalies-list">
-                    ${MOCK_DATA.anomalies.map(a => `
-                        <div class="anomaly-item hs-${a.alert}">
-                            <i class="${a.alert === 'alta' ? 'ri-close-circle-line' : 'ri-error-warning-line'}" style="font-size:1.5rem; color:var(--color-danger);"></i>
-                            <div style="flex:1;">
-                                <div class="a-title">${a.title}</div>
-                                <div class="a-desc">${a.desc}</div>
-                            </div>
-                            <div class="a-client">${a.client}</div>
-                        </div>
-                    `).join('')}
+    fetch(`${API_DASHBOARD}/anomalies`)
+        .then(res => res.json())
+        .then(anomalies => {
+            $('#contracts-kpi-grid').innerHTML = `
+                <div class="stat-card">
+                    <div class="stat-icon stat-icon--blue"><i class="ri-folder-shield-2-line"></i></div>
+                    <div class="stat-info"><span class="stat-value">${window._allContracts ? window._allContracts.length : 0}</span><span class="stat-label">Contratti Totali</span></div>
                 </div>
-            </div>
-        </div>
-    `;
+                <div class="stat-card">
+                    <div class="stat-icon stat-icon--green"><i class="ri-checkbox-circle-line"></i></div>
+                    <div class="stat-info"><span class="stat-value">${window._allContracts ? window._allContracts.filter(c=>c.status==='ACTIVE').length : 0}</span><span class="stat-label">Attivi</span></div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon stat-icon--danger"><i class="ri-error-warning-line"></i></div>
+                    <div class="stat-info"><span class="stat-value">${anomalies.length}</span><span class="stat-label">Anomalie Rilevate</span></div>
+                </div>
+            `;
 
-    if (!window._notified) {
-        checkAndNotify();
-        window._notified = true;
-    }
+            $('#anomalies-container').innerHTML = `
+                <div class="card" style="border-color:var(--color-danger); background: var(--color-danger-bg);">
+                    <div class="card-header" style="border-bottom:none; padding-bottom:0;">
+                        <h2 style="color:var(--color-danger);"><i class="ri-alarm-warning-fill"></i> Attenzione: ${anomalies.length} anomalie riscontrate</h2>
+                    </div>
+                    <div class="card-body">
+                        <div class="anomalies-list">
+                            ${anomalies.map(a => `
+                                <div class="anomaly-item hs-${a.gravita}">
+                                    <i class="${a.gravita === 'alta' ? 'ri-close-circle-line' : 'ri-error-warning-line'}" style="font-size:1.5rem; color:var(--color-danger);"></i>
+                                    <div style="flex:1;">
+                                        <div class="a-title">${a.tipo.toUpperCase().replace('_', ' ')}: ${a.cliente}</div>
+                                        <div class="a-desc">${a.desc}</div>
+                                    </div>
+                                    <div class="a-client">${a.prodotto}</div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            if (!window._notified) {
+                checkAndNotify(anomalies);
+                window._notified = true;
+            }
+        })
+        .catch(err => console.error(err));
 }
 
 function renderMap() {
-    $('#map-container').innerHTML = `
-        <svg viewBox="0 0 100 100" style="width:100%; height:100%; opacity:0.3; position:absolute; z-index:0; pointer-events:none;">
-            <path d="M25,20 L40,25 L50,40 L65,55 L80,70 L75,80 L60,85 L50,75 L45,85 L35,70 L30,55 L25,45 Z" fill="none" stroke="var(--text-tertiary)" stroke-width="2" stroke-linejoin="round"/>
-        </svg>
-        <div style="position:relative; width:100%; height:300px; z-index:1;">
-            ${MOCK_DATA.mapData.map(d => `
-                <div class="map-dot" style="position:absolute; left:${d.cx}; top:${d.cy};" title="${d.city}: ${d.count} contratti">
-                    <i class="ri-map-pin-2-fill" style="color:var(--accent); font-size:1.5rem; filter:drop-shadow(0 0 10px var(--accent-glow));"></i>
-                    <div style="position:absolute; background:var(--bg-card); border:1px solid var(--border-color); padding:0.2rem 0.5rem; border-radius:4px; font-size:0.7rem; color:var(--text-primary); margin-top:4px; transform:translate(-25%, 0); pointer-events:none;">
-                        ${d.city} (${d.count})
-                    </div>
+    fetch(`${API_DASHBOARD}/map-data`)
+        .then(res => res.json())
+        .then(mapData => {
+            $('#map-container').innerHTML = `
+                <svg viewBox="0 0 100 100" style="width:100%; height:100%; opacity:0.3; position:absolute; z-index:0; pointer-events:none;">
+                    <path d="M25,20 L40,25 L50,40 L65,55 L80,70 L75,80 L60,85 L50,75 L45,85 L35,70 L30,55 L25,45 Z" fill="none" stroke="var(--text-tertiary)" stroke-width="2" stroke-linejoin="round"/>
+                </svg>
+                <div style="position:relative; width:100%; height:300px; z-index:1;">
+                    ${mapData.map(d => `
+                        <div class="map-dot" style="position:absolute; left:${d.lng*3}%; top:${100 - d.lat*2}%;" title="${d.citta}: ${d.count} contratti">
+                            <i class="ri-map-pin-2-fill" style="color:var(--accent); font-size:1.5rem; filter:drop-shadow(0 0 10px var(--accent-glow));"></i>
+                            <div style="position:absolute; background:var(--bg-card); border:1px solid var(--border-color); padding:0.2rem 0.5rem; border-radius:4px; font-size:0.7rem; color:var(--text-primary); margin-top:4px; transform:translate(-25%, 0); pointer-events:none;">
+                                ${d.citta} (${d.count})
+                            </div>
+                        </div>
+                    `).join('')}
                 </div>
-            `).join('')}
-        </div>
-    `;
+            `;
+        })
+        .catch(err => console.error(err));
 }
 
 function renderTopClients() {
-    $('#topclients-container').innerHTML = `
-        <table class="data-table">
-            <thead><tr><th>Rank</th><th>Cliente</th><th>Score</th><th>Valutazione</th><th>Canone Annuo</th></tr></thead>
-            <tbody>
-                ${MOCK_DATA.topClients.map(c => `
-                <tr>
-                    <td><div class="rank-number">#${c.rank}</div></td>
-                    <td><strong style="font-size:1.05rem; color:var(--text-primary);">${c.name}</strong></td>
-                    <td><span class="rank-score">${c.score}/100</span></td>
-                    <td><span class="badge ${c.score > 90 ? 'badge--success' : (c.score > 70 ? 'badge--info' : 'badge--warning')}">${c.level}</span></td>
-                    <td>${c.canone}</td>
-                </tr>
-                `).join('')}
-            </tbody>
-        </table>
-    `;
+    fetch(`${API_DASHBOARD}/top-clients`)
+        .then(res => res.json())
+        .then(clients => {
+            $('#topclients-container').innerHTML = `
+                <table class="data-table">
+                    <thead><tr><th>Rank</th><th>Cliente</th><th>Score</th><th>Prodotto</th><th>Canone Trimestrale</th></tr></thead>
+                    <tbody>
+                        ${clients.map(c => `
+                        <tr>
+                            <td><div class="rank-number">#${c.index+1}</div></td>
+                            <td><strong style="font-size:1.05rem; color:var(--text-primary);">${c.cliente}</strong></td>
+                            <td><span class="rank-score">${c.rating}/100</span></td>
+                            <td><span class="badge ${c.rating > 90 ? 'badge--success' : (c.rating > 70 ? 'badge--info' : 'badge--warning')}">${c.prodotto}</span></td>
+                            <td>€ ${c.canone_trim}</td>
+                        </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+        })
+        .catch(err => console.error(err));
 }
 
 function renderRadar() {
-    $('#radar-container').innerHTML = MOCK_DATA.anomalies.map(a => `
-        <div style="flex: 1 1 300px; background: rgba(255,255,255,0.02); border: 1px solid ${a.alert === 'alta' ? 'var(--color-danger)' : 'var(--border-color)'}; padding: 1.5rem; border-radius: var(--radius-md);">
-            <div style="display: flex; justify-content: space-between; margin-bottom: 1rem;">
-                <h3 style="margin: 0; font-size: 1.1rem; color: var(--text-primary);">${a.client}</h3>
-                <span class="badge ${a.alert === 'alta' ? 'badge--danger' : 'badge--warning'}">${a.alert.toUpperCase()}</span>
-            </div>
-            <p style="color: var(--text-primary); font-weight: 600; font-size: 0.95rem; margin-bottom: 0.5rem;"><i class="ri-alert-line"></i> ${a.title}</p>
-            <p style="color: var(--text-secondary); font-size: 0.85rem; line-height: 1.4;">${a.desc}</p>
-            <button class="btn btn--sm btn--primary" style="margin-top: 1rem; width: 100%;">Mitiga Rischio KPI</button>
-        </div>
-    `).join('') + `
-        <div style="flex: 1 1 300px; background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); padding: 1.5rem; border-radius: var(--radius-md);">
-            <div style="display: flex; justify-content: space-between; margin-bottom: 1rem;">
-                <h3 style="margin: 0; font-size: 1.1rem; color: var(--text-primary);">Previsioni Churn</h3>
-                <span class="badge badge--info">PREVISIONE</span>
-            </div>
-            <p style="color: var(--text-primary); font-weight: 600; font-size: 0.95rem; margin-bottom: 0.5rem;"><i class="ri-user-unfollow-line"></i> Cyberdyne Risk: 45%</p>
-            <p style="color: var(--text-secondary); font-size: 0.85rem; line-height: 1.4;">Comportamento cliente a rischio. Consumo licenze sceso del 20% in 1 mese.</p>
-            <button class="btn btn--sm btn--ghost" style="margin-top: 1rem; width: 100%;">Guarda Report Churn</button>
-        </div>
-    `;
+    fetch(`${API_DASHBOARD}/anomalies`)
+        .then(res => res.json())
+        .then(anomalies => {
+            $('#radar-container').innerHTML = anomalies.map(a => `
+                <div style="flex: 1 1 300px; background: rgba(255,255,255,0.02); border: 1px solid ${a.gravita === 'alta' ? 'var(--color-danger)' : 'var(--border-color)'}; padding: 1.5rem; border-radius: var(--radius-md);">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 1rem;">
+                        <h3 style="margin: 0; font-size: 1.1rem; color: var(--text-primary);">${a.cliente}</h3>
+                        <span class="badge ${a.gravita === 'alta' ? 'badge--danger' : 'badge--warning'}">${a.gravita.toUpperCase()}</span>
+                    </div>
+                    <p style="color: var(--text-primary); font-weight: 600; font-size: 0.95rem; margin-bottom: 0.5rem;"><i class="ri-alert-line"></i> ${a.tipo.replace('_', ' ')}</p>
+                    <p style="color: var(--text-secondary); font-size: 0.85rem; line-height: 1.4;">${a.desc}</p>
+                    <button class="btn btn--sm btn--primary" style="margin-top: 1rem; width: 100%;">Apri Pratica</button>
+                </div>
+            `).join('') || '<p style="color:var(--text-secondary);">Nessuna anomalia contrattuale rilevata.</p>';
+        })
+        .catch(err => console.error(err));
 }
 
 function renderAdvisor() {
-    $('#advisor-container').innerHTML = MOCK_DATA.advisor.map(a => `
-        <div class="advisor-card">
-            <div class="adv-icon"><i class="ri-robot-2-fill"></i></div>
-            <div class="adv-content">
-                <div class="adv-title">${a.title} <span class="badge badge--purple">${a.type}</span></div>
-                <div class="adv-desc">${a.desc}</div>
-                <button class="adv-action">${a.action}</button>
-            </div>
-        </div>
-    `).join('');
+    fetch(`${API_DASHBOARD}/ai-advice`)
+        .then(res => res.json())
+        .then(advice => {
+            $('#advisor-container').innerHTML = advice.map(a => `
+                <div class="advisor-card">
+                    <div class="adv-icon"><i class="ri-robot-2-fill"></i></div>
+                    <div class="adv-content">
+                        <div class="adv-title">${a.titolo} <span class="badge ${a.priorita === 'alta' ? 'badge--danger' : 'badge--purple'}">${a.categoria}</span></div>
+                        <div class="adv-desc">${a.desc}</div>
+                        <button class="adv-action">${a.azione}</button>
+                    </div>
+                </div>
+            `).join('');
+        })
+        .catch(err => console.error(err));
 }
 
-function checkAndNotify() {
+function checkAndNotify(anomalies) {
     if ("Notification" in window) {
-        if (Notification.permission === 'granted') {
-            const critici = MOCK_DATA.anomalies.filter(a => a.alert === 'alta');
+        if (Notification.permission === 'granted' && anomalies) {
+            const critici = anomalies.filter(a => a.gravita === 'alta');
             if (critici.length > 0) {
                 new Notification('ContractIQ Alert', { 
                     body: `${critici.length} anomalie critiche rilevate nei contratti!`,
@@ -958,7 +928,7 @@ function checkAndNotify() {
             }
         } else if (Notification.permission !== 'denied') {
             Notification.requestPermission().then(permission => {
-                if (permission === 'granted') checkAndNotify();
+                if (permission === 'granted') checkAndNotify(anomalies);
             });
         }
     }
