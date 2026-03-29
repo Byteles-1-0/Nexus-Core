@@ -113,13 +113,10 @@ function App() {
 
   const viewTitles = {
     overview: 'Overview',
-    costs: 'Reparto Costi',
-    upload: 'Carica Contratto',
+    upload: 'Analisi Contratto',
     contracts: 'Contratti',
-    radar: 'Risk Radar',
     topclients: 'Top Clients',
     advisor: 'AI Advisor',
-    simulator: 'Simulatore Scenari',
     repricing: 'Re-Pricing',
     detail: 'Dettaglio Contratto'
   };

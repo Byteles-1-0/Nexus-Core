@@ -4,14 +4,11 @@ import React from 'react';
 const Sidebar = ({ activeView, onViewChange, tenantName, isOpen, onToggle }) => {
   const navItems = [
     { id: 'overview', icon: 'ri-dashboard-3-line', label: 'Overview' },
-    { id: 'costs', icon: 'ri-line-chart-line', label: 'Reparto Costi' },
-    { id: 'upload', icon: 'ri-upload-cloud-2-line', label: 'Carica Contratto' },
+    { id: 'upload', icon: 'ri-sparkling-2-line', label: 'Analisi Contratto' },
     { id: 'contracts', icon: 'ri-folder-shield-2-line', label: 'Contratti' },
-    { id: 'radar', icon: 'ri-radar-line', label: 'Risk Radar' },
-    { id: 'topclients', icon: 'ri-vip-crown-2-line', label: 'Top Clients' },
     { id: 'advisor', icon: 'ri-brain-line', label: 'AI Advisor' },
     { id: 'repricing', icon: 'ri-price-tag-3-line', label: 'Re-Pricing' },
-    { id: 'simulator', icon: 'ri-flask-line', label: 'Simulatore' }
+    { id: 'topclients', icon: 'ri-vip-crown-2-line', label: 'Top Clients' },
   ];
 
   return (

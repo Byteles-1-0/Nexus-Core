@@ -73,9 +73,9 @@ const RepricingView = () => {
                 {/* Pricing proposals */}
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.75rem', marginBottom: '1rem' }}>
                   {c.proposte.map(p => {
-                    // Raccomandata based on confidence: 0-30→conservativa, 30-70→raccomandata, 70+→aggressiva
-                    const recFascia = c.indice_confidenza >= 70 ? 'aggressiva' : c.indice_confidenza >= 30 ? 'raccomandata' : 'conservativa';
+                    const recFascia = c.indice_confidenza >= 70 ? 'aggressiva' : c.indice_confidenza >= 30 ? 'media' : 'conservativa';
                     const isRec = p.fascia === recFascia;
+                    const displayName = p.fascia === 'raccomandata' ? 'media' : p.fascia;
                     return (
                       <div key={p.fascia} style={{
                         border: `2px solid ${isRec ? 'var(--accent)' : 'var(--border-color)'}`,
@@ -84,7 +84,7 @@ const RepricingView = () => {
                         position: 'relative'
                       }}>
                         {isRec && <div style={{ position: 'absolute', top: '-10px', left: '50%', transform: 'translateX(-50%)', background: 'var(--accent)', color: '#fff', fontSize: '0.65rem', padding: '2px 8px', borderRadius: '4px', fontWeight: 700 }}>RACCOMANDATA</div>}
-                        <div style={{ fontSize: '0.7rem', textTransform: 'uppercase', color: 'var(--text-tertiary)', marginBottom: '0.5rem' }}>{p.fascia}</div>
+                        <div style={{ fontSize: '0.7rem', textTransform: 'uppercase', color: 'var(--text-tertiary)', marginBottom: '0.5rem' }}>{displayName}</div>
                         <div style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--text-primary)' }}>+{p.percentuale}%</div>
                         <div style={{ fontSize: '0.85rem', marginTop: '0.25rem' }}>{formatCurrency(p.nuovo_canone)}/trim</div>
                         <div style={{ fontSize: '0.8rem', color: 'var(--color-success)', marginTop: '0.5rem' }}>+{formatCurrency(p.delta_revenue_annuo)}/anno</div>
