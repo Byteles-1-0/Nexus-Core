@@ -1155,46 +1155,89 @@ def get_repricing():
     expiring.sort(key=lambda x: x['giorni_scadenza'])
     
     for c in expiring:
-        # Calculate confidence index (0-100)
-        score = 50
-        # Tetto crediti: low = high confidence (25%)
-        if c['tetto_cred'] <= 10: score += 25
-        elif c['tetto_cred'] <= 12: score += 15
-        elif c['tetto_cred'] <= 15: score += 5
-        # Credito uptime: low = high confidence (20%)
-        if c['credito_uptime'] <= 5: score += 20
-        elif c['credito_uptime'] <= 7: score += 10
-        # Credito ticketing: low = high confidence (15%)
-        if c['credito_ticketing'] <= 5: score += 15
-        elif c['credito_ticketing'] <= 6: score += 8
-        # Preavviso: long = high confidence (15%)
-        if c['preavviso_gg'] >= 60: score += 15
-        elif c['preavviso_gg'] >= 30: score += 8
-        # Durata: long = high confidence (15%)
-        if c['durata_mesi'] >= 24: score += 15
-        elif c['durata_mesi'] >= 12: score += 8
-        # Subtract for very restrictive terms
-        if c['tetto_cred'] > 15: score -= 10
-        if c['credito_uptime'] > 10: score -= 10
+        # ── Confidence index (0-100) based on contract-specific data ──
+        # Each factor contributes independently based on actual values
         
-        confidence = min(100, max(0, score))
+        # Tetto crediti (weight 25): lower = more open client
+        tetto_score = max(0, 25 - c['tetto_cred'] * 1.8)  # 10%→7, 5%→16, 15%→-2→0, 20%→-11→0
         
-        if confidence >= 70:
+        # Credito uptime (weight 20): lower = more open
+        uptime_score = max(0, 20 - c['credito_uptime'] * 2.5)  # 5%→7.5, 8%→0, 10%→-5→0
+        
+        # Credito ticketing (weight 15): lower = more open
+        ticket_score = max(0, 15 - c['credito_ticketing'] * 2.0)  # 5%→5, 6%→3, 8%→-1→0
+        
+        # Preavviso (weight 20): longer = more stable client
+        if c['preavviso_gg'] >= 90:
+            preav_score = 20
+        elif c['preavviso_gg'] >= 60:
+            preav_score = 15
+        elif c['preavviso_gg'] >= 30:
+            preav_score = 8
+        else:
+            preav_score = 2
+        
+        # Durata (weight 20): longer = more committed
+        if c['durata_mesi'] >= 36:
+            durata_score = 20
+        elif c['durata_mesi'] >= 24:
+            durata_score = 14
+        elif c['durata_mesi'] >= 12:
+            durata_score = 8
+        else:
+            durata_score = 3
+        
+        confidence = min(100, max(0, round(tetto_score + uptime_score + ticket_score + preav_score + durata_score)))
+        
+        if confidence >= 65:
             label = 'alta'
-            pcts = [5, 12, 20]
-            probs = [92, 75, 55]
-        elif confidence >= 40:
+        elif confidence >= 35:
             label = 'media'
-            pcts = [3, 7, 12]
-            probs = [88, 65, 40]
         else:
             label = 'bassa'
-            pcts = [1, 3, 5]
-            probs = [95, 80, 60]
         
+        # ── Dynamic pricing percentages based on confidence + contract specifics ──
         canone = c['canone_trim']
+        
+        # Gap from portfolio average influences pricing aggressiveness
+        gap_from_avg = (avg_canone - canone) / avg_canone if avg_canone > 0 else 0  # positive = under-priced
+        gap_bonus = max(0, min(5, gap_from_avg * 15))  # 0-5% extra if under-priced
+        
+        # Urgency factor: fewer days = slightly less aggressive (less negotiation time)
+        urgency_factor = 1.0 if c['giorni_scadenza'] >= 15 else 0.85
+        
+        # Calculate per-contract percentages
+        if confidence >= 65:
+            base_cons = 4 + gap_bonus * 0.3
+            base_rec = 10 + gap_bonus * 0.8
+            base_agg = 18 + gap_bonus
+            prob_cons = min(95, 88 + confidence * 0.05)
+            prob_rec = min(85, 68 + confidence * 0.1)
+            prob_agg = min(65, 40 + confidence * 0.15)
+        elif confidence >= 35:
+            base_cons = 2 + gap_bonus * 0.2
+            base_rec = 5 + gap_bonus * 0.5
+            base_agg = 10 + gap_bonus * 0.7
+            prob_cons = min(92, 82 + confidence * 0.08)
+            prob_rec = min(75, 55 + confidence * 0.12)
+            prob_agg = min(50, 28 + confidence * 0.15)
+        else:
+            base_cons = 1 + gap_bonus * 0.1
+            base_rec = 2.5 + gap_bonus * 0.3
+            base_agg = 5 + gap_bonus * 0.4
+            prob_cons = min(96, 90 + confidence * 0.05)
+            prob_rec = min(82, 72 + confidence * 0.1)
+            prob_agg = min(60, 48 + confidence * 0.12)
+        
+        pcts = [
+            round(base_cons * urgency_factor, 1),
+            round(base_rec * urgency_factor, 1),
+            round(base_agg * urgency_factor, 1)
+        ]
+        probs = [round(prob_cons), round(prob_rec), round(prob_agg)]
+        
         proposte = []
-        for i, (fascia, pct, prob) in enumerate(zip(['conservativa', 'raccomandata', 'aggressiva'], pcts, probs)):
+        for fascia, pct, prob in zip(['conservativa', 'raccomandata', 'aggressiva'], pcts, probs):
             nuovo = round(canone * (1 + pct / 100), 2)
             proposte.append({
                 'fascia': fascia,
@@ -1206,12 +1249,18 @@ def get_repricing():
         
         motivazioni = []
         if canone < avg_canone * 0.9:
-            motivazioni.append(f"Canone attuale sotto media portafoglio (€{avg_canone:,.0f}/trim)")
+            motivazioni.append(f"Canone sotto media portafoglio (€{avg_canone:,.0f}/trim)")
+        if canone >= avg_canone * 1.1:
+            motivazioni.append("Canone già sopra media — repricing moderato")
         motivazioni.append("Costi infrastruttura in aumento YoY")
         if c['tetto_cred'] <= 10:
-            motivazioni.append(f"Cliente con basso tetto crediti ({c['tetto_cred']}%) — buona apertura")
-        elif c['tetto_cred'] > 15:
-            motivazioni.append(f"Cliente con alto tetto crediti ({c['tetto_cred']}%) — cautela nel repricing")
+            motivazioni.append(f"Basso tetto crediti ({c['tetto_cred']}%) — cliente aperto")
+        elif c['tetto_cred'] > 12:
+            motivazioni.append(f"Alto tetto crediti ({c['tetto_cred']}%) — cautela")
+        if c['preavviso_gg'] >= 60:
+            motivazioni.append(f"Preavviso lungo ({c['preavviso_gg']}gg) — cliente stabile")
+        if c['credito_uptime'] > 7:
+            motivazioni.append(f"Credito uptime elevato ({c['credito_uptime']}%) — clausola restrittiva")
         
         results.append({
             'contract_id': c['id'],
@@ -1223,10 +1272,11 @@ def get_repricing():
             'indice_confidenza': confidence,
             'confidenza_label': label,
             'fattori_confidenza': {
-                'tetto_crediti': {'valore': c['tetto_cred'], 'score': min(100, max(0, 100 - c['tetto_cred'] * 5))},
-                'credito_uptime': {'valore': c['credito_uptime'], 'score': min(100, max(0, 100 - c['credito_uptime'] * 10))},
-                'preavviso': {'valore': c['preavviso_gg'], 'score': min(100, c['preavviso_gg'])},
-                'durata': {'valore': c['durata_mesi'], 'score': min(100, c['durata_mesi'] * 4)}
+                'tetto_crediti': {'valore': c['tetto_cred'], 'score': round(tetto_score / 25 * 100)},
+                'credito_uptime': {'valore': c['credito_uptime'], 'score': round(uptime_score / 20 * 100)},
+                'credito_ticketing': {'valore': c['credito_ticketing'], 'score': round(ticket_score / 15 * 100)},
+                'preavviso': {'valore': c['preavviso_gg'], 'score': round(preav_score / 20 * 100)},
+                'durata': {'valore': c['durata_mesi'], 'score': round(durata_score / 20 * 100)}
             },
             'proposte': proposte,
             'motivazioni': motivazioni,
