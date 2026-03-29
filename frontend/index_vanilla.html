@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="FOCO - Contract Intelligence Platform per la gestione automatizzata dei contratti B2B">
+    <title>FOCO — Contract Intelligence</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@4.1.0/fonts/remixicon.css" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- ============ WELCOME PAGE (fullscreen, no sidebar) ============ -->
+    <div class="welcome-page active" id="welcome-page">
+        
+        <!-- Animated background -->
+        <div class="welcome-bg">
+            <div class="welcome-orb welcome-orb--1"></div>
+            <div class="welcome-orb welcome-orb--2"></div>
+            <div class="welcome-orb welcome-orb--3"></div>
+        </div>
+
+        <div class="welcome-container">
+            <!-- PHASE 1: Hero + Upload -->
+            <div class="welcome-phase active" id="welcome-phase-upload">
+                <div class="welcome-logo">
+                    <div class="welcome-logo-icon">
+                        <i class="ri-file-shield-2-line"></i>
+                    </div>
+                    <h1 class="welcome-title">FOCO</h1>
+                    <p class="welcome-tagline">Contract Intelligence Platform</p>
+                </div>
+
+                <div class="welcome-hero-text">
+                    <h2>Gestisci i tuoi contratti<br>con l'<span class="gradient-text">Intelligenza Artificiale</span></h2>
+                    <p class="welcome-subtitle">Carica il contratto del tuo cliente e il nostro sistema AI estrarrà automaticamente tutti i dati.</p>
+                </div>
+
+                <div class="welcome-upload-area">
+                    <div class="welcome-dropzone" id="welcome-dropzone">
+                        <input type="file" id="welcome-file-input" accept=".pdf,.docx,.jpg,.jpeg,.png" multiple hidden>
+                        <div class="welcome-dropzone-content">
+                            <div class="welcome-dropzone-icon">
+                                <i class="ri-upload-cloud-2-line"></i>
+                            </div>
+                            <h3>Trascina qui il contratto</h3>
+                            <p>oppure <span class="welcome-browse-link">sfoglia i file</span></p>
+                            <div class="welcome-formats">
+                                <span>PDF</span>
+                                <span>DOCX</span>
+                                <span>JPG</span>
+                                <span>PNG</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- File selected preview -->
+                    <div class="welcome-file-selected" id="welcome-file-selected" style="display:none;">
+                        <div class="welcome-file-info">
+                            <i class="ri-file-text-line"></i>
+                            <div>
+                                <span class="welcome-file-name" id="welcome-file-name"></span>
+                                <span class="welcome-file-size" id="welcome-file-size"></span>
+                            </div>
+                        </div>
+                        <button class="welcome-file-remove" id="welcome-file-remove">
+                            <i class="ri-close-line"></i>
+                        </button>
+                    </div>
+
+                    <button class="welcome-btn-start" id="welcome-btn-start" disabled>
+                        <i class="ri-sparkling-2-line"></i>
+                        <span>Analizza Contratto</span>
+                        <i class="ri-arrow-right-line"></i>
+                    </button>
+                </div>
+
+                <div class="welcome-footer-hint">
+                    <i class="ri-shield-check-line"></i>
+                    <span>I tuoi documenti sono trattati in modo sicuro e conforme al GDPR</span>
+                </div>
+            </div>
+
+            <!-- PHASE 2: Processing animation -->
+            <div class="welcome-phase" id="welcome-phase-processing">
+                <div class="processing-container">
+                    <div class="processing-icon">
+                        <div class="processing-ring"></div>
+                        <i class="ri-brain-line"></i>
+                    </div>
+                    <h2 class="processing-title">Stiamo analizzando il contratto...</h2>
+                    <p class="processing-subtitle" id="processing-status">Estrazione testo dal documento</p>
+                    <div class="processing-steps">
+                        <div class="processing-step active" id="proc-step-1">
+                            <i class="ri-file-search-line"></i>
+                            <span>Estrazione testo</span>
+                        </div>
+                        <div class="processing-step" id="proc-step-2">
+                            <i class="ri-robot-2-line"></i>
+                            <span>Analisi AI</span>
+                        </div>
+                        <div class="processing-step" id="proc-step-3">
+                            <i class="ri-check-double-line"></i>
+                            <span>Riconoscimento</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PHASE 3: Welcome greeting -->
+            <div class="welcome-phase" id="welcome-phase-greeting">
+                <div class="greeting-multi-lang-container">
+                    <h1 class="greeting-multi-title" id="greeting-multi-title">Benvenuti</h1>
+                </div>
+                <!-- Div fade-in delayed for the button -->
+                <div class="greeting-container greeting-fade-in" style="position: absolute; bottom: 10%; z-index: 10; width: 100%; left: 0; right: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                    <div class="greeting-checkmark" style="background: rgba(99, 102, 241, 0.1); border-color: rgba(99, 102, 241, 0.3); width: 60px; height: 60px; font-size: 1.8rem; margin-bottom: 1.5rem;">
+                        <i class="ri-check-double-line" style="color: var(--accent);"></i>
+                    </div>
+                    <p class="greeting-subtitle" style="font-size: 1.1rem; color: rgba(255,255,255,0.8); max-width: 600px; margin: 0 auto 2rem auto; line-height: 1.6; text-align: center;">Il contratto è stato analizzato con successo dall'AI.<br>Verifica i dati estratti e procedi all'importazione.</p>
+                    <button class="welcome-btn-start" id="greeting-btn-continue" style="width: auto; min-width: 300px; padding: 1rem 3rem; box-shadow: 0 0 20px rgba(99, 102, 241, 0.3); margin: 0 auto;">
+                        <i class="ri-file-list-3-line"></i>
+                        <span>Visualizza Analisi</span>
+                        <i class="ri-arrow-right-line"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============ APP SHELL (sidebar + main, initially hidden) ============ -->
+    <div class="app-shell" id="app-shell">
+
+        <!-- SIDEBAR -->
+        <nav class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <div class="logo-icon">
+                        <i class="ri-file-shield-2-line"></i>
+                    </div>
+                    <span class="logo-text">FOCO</span>
+                </div>
+                <p class="logo-subtitle">Contract Intelligence</p>
+            </div>
+
+            <ul class="nav-links">
+                <li>
+                    <a href="#" class="nav-link active" data-view="overview" id="nav-overview">
+                        <i class="ri-dashboard-3-line"></i>
+                        <span>Overview</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#" class="nav-link" data-view="costs" id="nav-costs">
+                        <i class="ri-line-chart-line"></i>
+                        <span>Reparto Costi</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#" class="nav-link" data-view="upload" id="nav-upload">
+                        <i class="ri-upload-cloud-2-line"></i>
+                        <span>Carica Contratto</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#" class="nav-link" data-view="contracts" id="nav-contracts">
+                        <i class="ri-folder-shield-2-line"></i>
+                        <span>Contratti</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#" class="nav-link" data-view="radar" id="nav-radar">
+                        <i class="ri-radar-line"></i>
+                        <span>Risk Radar</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#" class="nav-link" data-view="topclients" id="nav-topclients">
+                        <i class="ri-vip-crown-2-line"></i>
+                        <span>Top Clients</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#" class="nav-link" data-view="advisor" id="nav-advisor">
+                        <i class="ri-brain-line"></i>
+                        <span>AI Advisor</span>
+                    </a>
+                </li>
+            </ul>
+
+            <div class="sidebar-footer">
+                <div class="tenant-badge">
+                    <i class="ri-building-2-line"></i>
+                    <span id="sidebar-tenant-name">Acme Corp SaaS</span>
+                </div>
+            </div>
+        </nav>
+
+        <!-- MAIN CONTENT -->
+        <main class="main-content">
+            
+            <!-- TOP BAR -->
+            <header class="topbar">
+                <div class="topbar-left">
+                    <button class="menu-toggle" id="menu-toggle">
+                        <i class="ri-menu-line"></i>
+                    </button>
+                    <h1 class="page-title" id="page-title">Dashboard</h1>
+                </div>
+                <div class="topbar-right">
+                    <div class="status-indicator" id="api-status">
+                        <span class="status-dot"></span>
+                        <span class="status-text">Verifico API...</span>
+                    </div>
+                </div>
+            </header>
+
+            <!-- VIEW: OVERVIEW -->
+            <section class="view active" id="view-overview">
+                <div class="stats-grid" id="kpi-grid">
+                    <!-- KPI Popolati da JS -->
+                </div>
+
+                <div class="dashboard-split" style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem; margin-top: 1.5rem;">
+                    <div class="card">
+                        <div class="card-header">
+                            <h2><i class="ri-list-check-2"></i> Ultime Attività</h2>
+                            <button class="btn btn--ghost" id="btn-refresh-overview">
+                                <i class="ri-refresh-line"></i> Aggiorna
+                            </button>
+                        </div>
+                        <div class="card-body" id="overview-table-body">
+                            <!-- Popolato da JS -->
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <div class="card-header">
+                            <h2><i class="ri-alarm-warning-line"></i> Prossime Scadenze</h2>
+                        </div>
+                        <div class="card-body" id="expiring-list">
+                            <!-- Popolato da JS -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- VIEW: REPARTO COSTI -->
+            <section class="view" id="view-costs">
+                <div class="segmented-control" id="costs-segment">
+                    <button class="seg-btn active" data-prod="totale">Totale Portafoglio</button>
+                    <button class="seg-btn" data-prod="freader">Piattaforma Freader</button>
+                    <button class="seg-btn" data-prod="cutai">Piattaforma CutAI</button>
+                </div>
+                
+                <div class="stats-grid" id="costs-kpi-grid" style="margin-top:1.5rem;">
+                    <!-- Costi KPI da JS -->
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top: 1.5rem;">
+                    <div class="card">
+                        <div class="card-header"><h2><i class="ri-money-euro-box-line"></i> Costi Fissi</h2></div>
+                        <div class="card-body" id="costi-fissi-table"></div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header"><h2><i class="ri-line-chart-line"></i> Costi Variabili</h2></div>
+                        <div class="card-body" id="costi-variabili-table"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- VIEW: UPLOAD (in-app, for subsequent uploads) -->
+            <section class="view" id="view-upload">
+                <div class="pipeline-steps">
+                    <div class="step active" id="step-indicator-1">
+                        <div class="step-number">1</div><span>Upload</span>
+                    </div>
+                    <div class="step-connector"></div>
+                    <div class="step" id="step-indicator-2">
+                        <div class="step-number">2</div><span>Estrazione</span>
+                    </div>
+                    <div class="step-connector"></div>
+                    <div class="step" id="step-indicator-3">
+                        <div class="step-number">3</div><span>Analisi AI</span>
+                    </div>
+                    <div class="step-connector"></div>
+                    <div class="step" id="step-indicator-4">
+                        <div class="step-number">4</div><span>Conferma</span>
+                    </div>
+                </div>
+
+                <div class="step-content active" id="step-1">
+                    <div class="card">
+                        <div class="card-header"><h2><i class="ri-upload-cloud-2-line"></i> Carica Documento</h2></div>
+                        <div class="card-body">
+                            <div class="dropzone" id="dropzone">
+                                <input type="file" id="file-input" accept=".pdf,.docx,.jpg,.jpeg,.png" multiple hidden>
+                                <div class="dropzone-content">
+                                    <div class="dropzone-icon"><i class="ri-file-upload-line"></i></div>
+                                    <h3>Trascina qui i tuoi contratti</h3>
+                                    <p>oppure <span class="dropzone-link">sfoglia i file</span></p>
+                                    <div class="dropzone-formats">
+                                        <span class="format-badge">PDF</span>
+                                        <span class="format-badge">DOCX</span>
+                                        <span class="format-badge">JPG</span>
+                                        <span class="format-badge">PNG</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div id="files-preview-list" style="display:none; flex-direction:column; gap:0.5rem; margin-bottom:1rem;"></div>
+                            <button class="btn btn--primary btn--lg btn--full" id="btn-upload" disabled>
+                                <i class="ri-upload-2-line"></i> Carica ed Estrai Testo
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="step-content" id="step-2">
+                    <div class="card">
+                        <div class="card-header">
+                            <h2><i class="ri-file-search-line"></i> Testo Estratto</h2>
+                            <span class="badge badge--info" id="text-length-badge">0 caratteri</span>
+                        </div>
+                        <div class="card-body">
+                            <div class="extracted-text-container">
+                                <textarea id="extracted-text" readonly placeholder="Il testo estratto apparirà qui..."></textarea>
+                            </div>
+                            <div class="step-actions">
+                                <button class="btn btn--ghost" id="btn-back-to-upload"><i class="ri-arrow-left-line"></i> Indietro</button>
+                                <button class="btn btn--primary btn--lg" id="btn-analyze"><i class="ri-brain-line"></i> Analizza con AI</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="step-content" id="step-3">
+                    <!-- Single file analysis -->
+                    <div id="single-analysis-view">
+                        <div class="card">
+                            <div class="card-header">
+                                <h2><i class="ri-robot-2-line"></i> Risultato Analisi AI</h2>
+                                <span class="badge badge--success" id="product-badge"></span>
+                            </div>
+                            <div class="card-body">
+                                <div class="analysis-grid" id="analysis-grid"></div>
+                                <div class="step-actions">
+                                    <button class="btn btn--ghost" id="btn-back-to-text"><i class="ri-arrow-left-line"></i> Indietro</button>
+                                    <button class="btn btn--success btn--lg" id="btn-save" onclick="saveContract()"><i class="ri-save-3-line"></i> Conferma e Salva</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Batch analysis -->
+                    <div id="batch-analysis-view" style="display:none;">
+                        <div id="batch-results-list" style="display:flex; flex-direction:column; gap:1rem;"></div>
+                        <div id="batch-errors" style="margin-top:1rem;"></div>
+                        <div class="step-actions" style="margin-top:1.5rem;">
+                            <button class="btn btn--ghost" onclick="resetUploadFlow()"><i class="ri-arrow-left-line"></i> Indietro</button>
+                            <button class="btn btn--success btn--lg" onclick="saveAllContracts()"><i class="ri-save-3-line"></i> Conferma e Salva Tutti</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="step-content" id="step-4">
+                    <div class="card">
+                        <div class="card-body" style="text-align: center; padding: 4rem 2rem;">
+                            <div class="success-animation"><i class="ri-checkbox-circle-line"></i></div>
+                            <h2 style="margin-top: 1.5rem; color: var(--color-success);" id="save-success-title">Contratto Salvato!</h2>
+                            <p style="color: var(--text-secondary); margin-top: 0.5rem;" id="save-success-desc">Il contratto è stato registrato con successo nel database.</p>
+                            <p style="color: var(--text-tertiary); margin-top: 0.25rem; font-size: 0.85rem;" id="save-success-ids">ID: <code id="saved-contract-id"></code></p>
+                            <div class="step-actions" style="justify-content: center; margin-top: 2rem;">
+                                <button class="btn btn--ghost" onclick="switchView('contracts')"><i class="ri-file-list-3-line"></i> Vai ai Contratti</button>
+                                <button class="btn btn--primary" onclick="resetUploadFlow()"><i class="ri-add-line"></i> Carica un altro</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- VIEW: CONTRACTS LIST -->
+            <section class="view" id="view-contracts">
+                <div class="stats-grid" id="contracts-kpi-grid">
+                    <!-- KPI contratti popolato da JS -->
+                </div>
+                
+                <div id="anomalies-container" style="margin-bottom: 1.5rem;"></div>
+
+                <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+                    <div class="card">
+                        <div class="card-header">
+                            <h2><i class="ri-file-list-3-line"></i> Tutti i Contratti</h2>
+                            <div class="card-header-actions">
+                                <div class="search-box">
+                                    <i class="ri-search-line"></i>
+                                    <input type="text" id="search-contracts" placeholder="Cerca cliente...">
+                                </div>
+                                <button class="btn btn--ghost" id="btn-refresh-contracts"><i class="ri-refresh-line"></i></button>
+                            </div>
+                        </div>
+                        <div class="card-body" id="contracts-table-body">
+                            <div class="empty-state">
+                                <i class="ri-inbox-line"></i>
+                                <p>Nessun contratto trovato</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <div class="card-header">
+                            <h2><i class="ri-map-pin-line"></i> Mappa Geografica</h2>
+                        </div>
+                        <div class="card-body" id="map-container" style="min-height: 300px; position:relative; display:flex; align-items:center; justify-content:center;">
+                            <!-- Mappa SVG popolata da JS -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- VIEW: TOP CLIENTS -->
+            <section class="view" id="view-topclients">
+                <div class="card">
+                    <div class="card-header">
+                        <h2><i class="ri-medal-line"></i> Classifica Portfolio Clienti</h2>
+                    </div>
+                    <div class="card-body" id="topclients-container">
+                        <!-- Popolato da JS -->
+                    </div>
+                </div>
+            </section>
+            
+            <!-- VIEW: RISK RADAR -->
+            <section class="view" id="view-radar">
+                <div class="card">
+                    <div class="card-header">
+                        <h2><i class="ri-radar-fill" style="color:var(--color-danger);"></i> Radar delle Criticità</h2>
+                    </div>
+                    <div class="card-body">
+                        <div id="radar-container" style="display: flex; gap: 1.5rem; flex-wrap: wrap;">
+                            <!-- Popolato da JS -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- VIEW: AI ADVISOR -->
+            <section class="view" id="view-advisor">
+                <div class="card" style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(139, 92, 246, 0.05)); border-color: rgba(99, 102, 241, 0.3);">
+                    <div class="card-header" style="border-bottom-color: rgba(99, 102, 241, 0.2);">
+                        <h2 style="color: var(--accent-hover);"><i class="ri-brain-line"></i> Consigli Strategici AI</h2>
+                    </div>
+                    <div class="card-body" id="advisor-container" style="display:flex; flex-direction:column; gap:1rem;">
+                        <!-- Popolato da JS -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- VIEW: CONTRACT DETAIL -->
+            <section class="view" id="view-detail">
+                <button class="btn btn--ghost" onclick="switchView('contracts')" style="margin-bottom: 1rem;">
+                    <i class="ri-arrow-left-line"></i> Torna alla lista
+                </button>
+                <div class="card">
+                    <div class="card-header">
+                        <h2><i class="ri-file-info-line"></i> Dettaglio Contratto</h2>
+                        <span class="badge" id="detail-product-badge"></span>
+                    </div>
+                    <div class="card-body" id="detail-body"></div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- LOADING OVERLAY -->
+    <div class="loading-overlay" id="loading-overlay">
+        <div class="loader">
+            <div class="loader-spinner"></div>
+            <p class="loader-text" id="loader-text">Elaborazione in corso...</p>
+        </div>
+    </div>
+
+    <!-- TOAST CONTAINER -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <script src="app.js"></script>
+</body>
+</html>

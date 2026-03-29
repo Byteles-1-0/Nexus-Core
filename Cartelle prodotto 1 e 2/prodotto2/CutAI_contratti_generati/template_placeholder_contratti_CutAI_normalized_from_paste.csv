@@ -1,0 +1,14 @@
+﻿placeholder,descrizione,contratto_Buonasera,contratto_ Buenasera,contratto_ Bonsoir,contratto_ Good evening,contratto_ Guten Abend,contratto_ Boa noite,contratto_ Buna seara,contratto_ Dobra vecer,contratto_ Dobar vecer,contratto_ Labas vakaras,contratto_ Labvakar,contratto_ Tere ohtust,contratto_ Hyvaa iltaa,contratto_ God kveld,contratto_ God aften,contratto_ God kvall,contratto_ Yaxsam xeyir,contratto_ Dobry vecer,contratto_ Pryjemnyj vecir,contratto_ Kalispera
+__CUTAI_CLIENTE_DENOMINAZIONE__,Ragione sociale del cliente,Buonasera,Buenasera,Bonsoir,Good evening,Guten Abend,Boa noite,Buna seara,Dobra vecer,Dobar vecer,Labas vakaras,Labvakar,Tere ohtust,Hyvaa iltaa,God kveld,God aften,God kvall,Yaxsam xeyir,Dobry vecer,Pryjemnyj vecir,Kalispera
+__CUTAI_CLIENTE_SEDE__,Sede legale del cliente,Milano,Roma,Torino,Milano,Napoli,Bologna,Roma,Firenze,Milano,Genova,Verona,Milano,Padova,Bari,Roma,Venezia,Catania,Milano,Modena,Palermo
+__CUTAI_DATA_SOTTOSCRIZIONE__,Data di sottoscrizione del contratto (formato consigliato: gg/mm/aaaa),12/01/2025,27/04/2025,09/05/2025,21/05/2025,03/06/2025,18/06/2025,07/07/2025,22/07/2025,11/08/2025,29/08/2025,14/09/2025,30/09/2025,12/10/2025,26/10/2025,08/11/2025,24/11/2025,10/12/2025,21/12/2025,05/01/2026,19/01/2026
+__CUTAI_CANONE_BASE_TRIMESTRALE__,Canone base trimestrale anticipato (Euro),1000,3000,15000,15000,2000,3000,2000,1500,1500,4000,1200,1200,3500,1000,2800,1800,1500,1500,1500,2000
+__CUTAI_SOGLIA_UTENTI_INCLUSI_M__,Numero di utenti inclusi nel canone base trimestrale,70,100,70,80,50,60,80,60,80,90,80,80,60,40,40,60,65,38,65,50
+__CUTAI_FEE_UTENTE_EXTRA_K__,Corrispettivo mensile per ogni utente extra onboardato oltre la soglia inclusa (Euro),20,20,20,20,20,30,20,20,20,20,20,20,35,20,30,20,20,35,20,35
+__CUTAI_PROFILO_COMMERCIALE__,Profilo commerciale del servizio: valori ammessi Standard oppure Premium,Standard,Premium,Standard,Standard,Standard,Premium,Standard,Standard,Standard,Premium,Standard,Standard,Premium,Standard,Premium,Standard,Standard,Premium,Standard,Premium
+__CUTAI_SOGLIA_MINIMA_SERVIZIO__,Soglia minima di disponibilità del servizio su base trimestrale (%),98,99,98,98,98,99,98,98,98,99,98,98,99,98,99,98,98,99,98,99
+__CUTAI_CREDITO_UPTIME_Q__,Credito di servizio per uptime sotto la soglia minima (% del canone trimestrale),5,10,5,5,5,15,5,5,5,15,5,5,15,5,15,5,10,15,5,15
+__CUTAI_CREDITO_TICKETING_K__,Credito di servizio per mancato rispetto SLA ticketing (% del canone trimestrale),5,5,4,5,4,5,4,4,4,5,4,4,5,6,5,4,5,5,5,5
+__CUTAI_TETTO_CREDITI_J__,Tetto massimo cumulato dei crediti di servizio nel trimestre (% del canone trimestrale),10,15,9,10,9,20,9,9,9,20,9,9,20,11,20,9,15,20,10,20
+__CUTAI_DURATA_MESI__,Durata iniziale del contratto (mesi),12,24,24,24,12,24,12,12,12,12,36,12,12,12,12,12,24,12,12,12
+__CUTAI_PREAVVISO_GIORNI__,Preavviso di disdetta (giorni),30,60,45,60,60,60,60,60,60,30,60,45,60,60,60,30,60,30,60,30

@@ -1,0 +1,12 @@
+// src/components/common/Badge.jsx
+import React from 'react';
+
+const Badge = ({ children, variant = 'info', className = '' }) => {
+  return (
+    <span className={`badge badge--${variant} ${className}`}>
+      {children}
+    </span>
+  );
+};
+
+export default Badge;
