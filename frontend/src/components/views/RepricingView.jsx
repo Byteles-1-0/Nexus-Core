@@ -73,7 +73,9 @@ const RepricingView = () => {
                 {/* Pricing proposals */}
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.75rem', marginBottom: '1rem' }}>
                   {c.proposte.map(p => {
-                    const isRec = p.fascia === 'raccomandata';
+                    // Raccomandata based on confidence: 0-30→conservativa, 30-70→raccomandata, 70+→aggressiva
+                    const recFascia = c.indice_confidenza >= 70 ? 'aggressiva' : c.indice_confidenza >= 30 ? 'raccomandata' : 'conservativa';
+                    const isRec = p.fascia === recFascia;
                     return (
                       <div key={p.fascia} style={{
                         border: `2px solid ${isRec ? 'var(--accent)' : 'var(--border-color)'}`,

@@ -91,7 +91,7 @@ const RiskComparisonStep = ({ analysisResult, originalRisk, modifications, onBac
       const a = document.createElement('a');
       a.href = url;
       const clientName = (analysisResult?.anagrafica?.cliente_ragione_sociale || 'contratto').replace(/\s+/g, '_');
-      a.download = `contratto_modificato_${clientName}.pdf`;
+      a.download = `contratto_${clientName}.docx`;
       a.click();
       URL.revokeObjectURL(url);
     } catch {
@@ -181,7 +181,7 @@ const RiskComparisonStep = ({ analysisResult, originalRisk, modifications, onBac
           <i className="ri-arrow-left-line"></i> Torna ai Punti Critici
         </Button>
         <Button variant="primary" onClick={handleDownload}>
-          <i className="ri-file-pdf-2-line"></i> Scarica PDF Modificato
+          <i className="ri-file-word-2-line"></i> Scarica DOCX Modificato
         </Button>
         <Button variant="success" size="lg" onClick={onSave}>
           <i className="ri-save-3-line"></i> Salva Contratto
