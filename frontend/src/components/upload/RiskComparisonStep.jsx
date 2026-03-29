@@ -1,73 +1,117 @@
 // src/components/upload/RiskComparisonStep.jsx
-import React, { useState, useEffect } from 'react';
-import { api } from '../../utils/api';
+import React from 'react';
 import Card from '../common/Card';
 import Button from '../common/Button';
 import StatCard from '../common/StatCard';
 
 const RiskComparisonStep = ({ analysisResult, originalRisk, modifications, onBack, onSave, onShowToast }) => {
-  const [newRisk, setNewRisk] = useState(null);
-  const [loading, setLoading] = useState(true);
+  if (!originalRisk) return null;
 
-  useEffect(() => {
-    recalculate();
-  }, []);
+  const savedIds = new Set(
+    Object.entries(modifications).filter(([_, m]) => m.saved).map(([id]) => id)
+  );
+  const savedCount = savedIds.size;
 
-  const recalculate = async () => {
-    setLoading(true);
-    try {
-      // Build modified contract data
-      const modified = JSON.parse(JSON.stringify(analysisResult));
-      // Apply saved modifications to SLA values where applicable
-      Object.entries(modifications).forEach(([id, mod]) => {
-        if (!mod.saved) return;
-        if (id === 'pc_tetto' && modified.sla) {
-          const match = mod.testo_migliorato?.match(/(\d+)%/);
-          if (match) modified.sla.tetto_crediti = parseFloat(match[1]);
-        }
-        if (id === 'pc_uptime' && modified.sla) {
-          const match = mod.testo_migliorato?.match(/(\d+)%/);
-          if (match) modified.sla.credito_uptime = parseFloat(match[1]);
-        }
-        if (id === 'pc_ticketing' && modified.sla) {
-          const match = mod.testo_migliorato?.match(/(\d+)%/);
-          if (match) modified.sla.credito_ticketing = parseFloat(match[1]);
-        }
-      });
+  // Recalculate risk score mirroring backend logic but reducing for resolved points
+  const sla = analysisResult?.sla || {};
+  const det = analysisResult?.dettagli_contratto || {};
+  const prodotto = (analysisResult?.prodotto || '').toLowerCase();
+  const comm = prodotto.includes('freader')
+    ? analysisResult?.commerciale_freader || {}
+    : analysisResult?.commerciale_cutai || {};
+  const canone = comm.canone_trimestrale || comm.canone_base_trimestrale || 0;
+  const tetto = sla.tetto_crediti || 0;
+  const uptime = sla.credito_uptime || 0;
+  const ticketing = sla.credito_ticketing || 0;
+  const preavviso = det.preavviso_giorni || 30;
+  const durata = det.durata_mesi || 12;
 
-      const res = await api.recalculateRisk(modified);
-      const data = await res.json();
-      if (res.ok && data.status === 'success') {
-        setNewRisk(data.data);
-      }
-    } catch {
-      onShowToast('Errore ricalcolo rischio', 'error');
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Base score (same as backend)
+  let newScore = 15;
+  
+  // SLA risk — reduce if those points were fixed
+  let slaRisk = 0;
+  slaRisk += savedIds.has('pc_tetto') ? Math.min(15, tetto * 1.0) * 0.3 : Math.min(15, tetto * 1.0);
+  slaRisk += savedIds.has('pc_uptime') ? Math.min(8, uptime * 1.2) * 0.3 : Math.min(8, uptime * 1.2);
+  slaRisk += savedIds.has('pc_ticketing') ? Math.min(7, ticketing * 1.0) * 0.3 : Math.min(7, ticketing * 1.0);
+  newScore += slaRisk;
 
-  if (loading) {
-    return (
-      <div className="step-content active" style={{ textAlign: 'center', padding: '4rem' }}>
-        <p style={{ color: 'var(--text-secondary)' }}>Ricalcolo KPI in corso...</p>
-      </div>
-    );
-  }
+  // Terms risk — reduce if those points were fixed
+  let termsRisk = 0;
+  if (preavviso < 30) termsRisk += savedIds.has('pc_preavviso_basso') ? 3 : 12;
+  else if (preavviso < 60) termsRisk += 5;
+  if (durata > 36) termsRisk += savedIds.has('pc_durata') ? 2 : 8;
+  else if (durata > 24) termsRisk += 3;
+  if (canone > 0 && canone < 3000) termsRisk += 5;
+  newScore += termsRisk;
 
-  const origScore = originalRisk?.risk_score || 0;
-  const newScore = newRisk?.risk_score || 0;
-  const origCritical = originalRisk?.punti_critici?.length || 0;
-  const newCritical = newRisk?.punti_critici?.length || 0;
-  const origSpelling = originalRisk?.errori_ortografici?.length || 0;
-  const savedCount = Object.values(modifications).filter(m => m.saved).length;
+  // Remaining critical points bonus (only unresolved ones)
+  const remainingPoints = (originalRisk.punti_critici || []).filter(p => !savedIds.has(p.id));
+  const weights = { alta: 4, media: 2, bassa: 1 };
+  const criticalBonus = remainingPoints.reduce((s, p) => s + (weights[p.gravita] || 1), 0);
+  newScore += Math.min(20, criticalBonus);
+
+  // No spelling errors after review
+  newScore = Math.min(95, Math.max(5, Math.round(newScore)));
+
+  const origScore = originalRisk.risk_score || 0;
+  const origCritical = originalRisk.punti_critici?.length || 0;
+  const newCritical = remainingPoints.length;
+  const origSpelling = originalRisk.errori_ortografici?.length || 0;
 
   const rows = [
-    { label: 'Risk Score', before: `${origScore}%`, after: `${newScore}%`, delta: newScore - origScore, unit: '%' },
-    { label: 'Punti Critici', before: origCritical, after: newCritical, delta: newCritical - origCritical, unit: '' },
-    { label: 'Errori Ortografici', before: origSpelling, after: 0, delta: -origSpelling, unit: '' },
-    { label: 'Modifiche Applicate', before: 0, after: savedCount, delta: savedCount, unit: '', positive: true },
+    { label: 'Risk Score', before: origScore, after: newScore, unit: '%' },
+    { label: 'Punti Critici', before: origCritical, after: newCritical, unit: '' },
+    { label: 'Errori Ortografici', before: origSpelling, after: 0, unit: '' },
+    { label: 'Modifiche Applicate', before: 0, after: savedCount, unit: '', positive: true },
   ];
+
+  // Generate downloadable modified contract text
+  const handleDownload = () => {
+    let content = `CONTRATTO MODIFICATO — ${analysisResult?.anagrafica?.cliente_ragione_sociale || 'Cliente'}\n`;
+    content += `Prodotto: ${analysisResult?.prodotto || 'N/A'}\n`;
+    content += `Data: ${new Date().toLocaleDateString('it-IT')}\n`;
+    content += `${'='.repeat(60)}\n\n`;
+
+    content += `ANAGRAFICA\n`;
+    content += `  Ragione Sociale: ${analysisResult?.anagrafica?.cliente_ragione_sociale || 'N/A'}\n`;
+    content += `  Sede Legale: ${analysisResult?.anagrafica?.cliente_sede_legale || 'N/A'}\n\n`;
+
+    content += `DETTAGLI CONTRATTO\n`;
+    content += `  Data Firma: ${det.data_firma || 'N/A'}\n`;
+    content += `  Durata: ${durata} mesi\n`;
+    content += `  Preavviso: ${preavviso} giorni\n\n`;
+
+    content += `SLA\n`;
+    content += `  Credito Uptime: ${uptime}%\n`;
+    content += `  Credito Ticketing: ${ticketing}%\n`;
+    content += `  Tetto Crediti: ${tetto}%\n\n`;
+
+    content += `${'='.repeat(60)}\n`;
+    content += `MODIFICHE APPLICATE (${savedCount})\n`;
+    content += `${'='.repeat(60)}\n\n`;
+
+    (originalRisk.punti_critici || []).filter(p => savedIds.has(p.id)).forEach(p => {
+      const mod = modifications[p.id];
+      content += `[${p.gravita.toUpperCase()}] ${p.sezione}\n`;
+      content += `  Originale: ${p.testo_contratto_originale}\n`;
+      content += `  Modificato: ${mod?.testo_migliorato || 'N/A'}\n`;
+      if (mod?.motivazione) content += `  Motivazione: ${mod.motivazione}\n`;
+      content += `\n`;
+    });
+
+    content += `${'='.repeat(60)}\n`;
+    content += `RISK SCORE: ${origScore}% → ${newScore}%\n`;
+    content += `PUNTI CRITICI: ${origCritical} → ${newCritical}\n`;
+
+    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `contratto_modificato_${(analysisResult?.anagrafica?.cliente_ragione_sociale || 'contratto').replace(/\s+/g, '_')}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   return (
     <div className="step-content active">
@@ -101,25 +145,24 @@ const RiskComparisonStep = ({ analysisResult, originalRisk, modifications, onBac
         <Card.Body style={{ padding: 0 }}>
           <table className="data-table">
             <thead>
-              <tr>
-                <th>KPI</th>
-                <th>Prima</th>
-                <th>Dopo</th>
-                <th>Delta</th>
-              </tr>
+              <tr><th>KPI</th><th>Prima</th><th>Dopo</th><th>Delta</th></tr>
             </thead>
             <tbody>
               {rows.map((row, i) => {
-                const improved = row.positive ? row.delta > 0 : row.delta < 0;
-                const worse = row.positive ? row.delta < 0 : row.delta > 0;
+                const delta = row.after - row.before;
+                const improved = row.positive ? delta > 0 : delta < 0;
+                const worse = row.positive ? delta < 0 : delta > 0;
                 return (
                   <tr key={i}>
                     <td style={{ fontWeight: 600 }}>{row.label}</td>
                     <td>{row.before}{row.unit}</td>
                     <td style={{ fontWeight: 600 }}>{row.after}{row.unit}</td>
-                    <td style={{ color: improved ? 'var(--color-success)' : worse ? 'var(--color-danger)' : 'var(--text-tertiary)', fontWeight: 600 }}>
-                      {row.delta > 0 ? '+' : ''}{row.delta}{row.unit}
-                      {improved ? ' ↓' : worse ? ' ↑' : ''}
+                    <td style={{
+                      color: improved ? 'var(--color-success)' : worse ? 'var(--color-danger)' : 'var(--text-tertiary)',
+                      fontWeight: 600
+                    }}>
+                      {delta > 0 ? '+' : ''}{delta}{row.unit}
+                      {improved ? ' ✓' : worse ? ' ✗' : ''}
                     </td>
                   </tr>
                 );
@@ -129,9 +172,30 @@ const RiskComparisonStep = ({ analysisResult, originalRisk, modifications, onBac
         </Card.Body>
       </Card>
 
+      {/* Resolved points */}
+      {savedCount > 0 && (
+        <Card style={{ marginTop: '1rem' }}>
+          <Card.Header>
+            <h2 style={{ fontSize: '0.9rem' }}><i className="ri-check-double-line" style={{ color: 'var(--color-success)' }}></i> Punti Critici Risolti</h2>
+          </Card.Header>
+          <Card.Body>
+            {(originalRisk.punti_critici || []).filter(p => savedIds.has(p.id)).map(p => (
+              <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.5rem 0', borderBottom: '1px solid var(--border-color)' }}>
+                <i className="ri-checkbox-circle-fill" style={{ color: 'var(--color-success)' }}></i>
+                <span style={{ fontWeight: 500, fontSize: '0.85rem' }}>{p.sezione}</span>
+                <span style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)', marginLeft: 'auto' }}>{p.valore_attuale} → modificato</span>
+              </div>
+            ))}
+          </Card.Body>
+        </Card>
+      )}
+
       <div className="step-actions" style={{ marginTop: '1.5rem' }}>
         <Button variant="ghost" onClick={onBack}>
           <i className="ri-arrow-left-line"></i> Torna ai Punti Critici
+        </Button>
+        <Button variant="primary" onClick={handleDownload}>
+          <i className="ri-download-2-line"></i> Scarica Contratto Modificato
         </Button>
         <Button variant="success" size="lg" onClick={onSave}>
           <i className="ri-save-3-line"></i> Salva Contratto

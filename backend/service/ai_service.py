@@ -334,14 +334,41 @@ Testo contratto:
         except Exception as e:
             print(f"⚠️ LLM text analysis failed, using rule-based only: {e}")
     
-    # Calculate risk score
-    weights = {'alta': 3, 'media': 2, 'bassa': 1}
-    if punti_critici:
-        total_weight = sum(weights.get(p.get('gravita', 'bassa'), 1) for p in punti_critici)
-        max_possible = len(punti_critici) * 3
-        risk_score = min(100, round(total_weight / max(max_possible, 1) * 100))
-    else:
-        risk_score = 5
+    # Calculate risk score based on entire contract, not just critical points count
+    # Base score starts at 15 (every contract has some inherent risk)
+    risk_score = 15
+    
+    # SLA risk component (0-30 points)
+    sla_risk = 0
+    sla_risk += min(15, tetto * 1.0)        # tetto 10% = 10pts, 20% = 15pts cap
+    sla_risk += min(8, uptime * 1.2)         # uptime 5% = 6pts, 7% = 8pts cap
+    sla_risk += min(7, ticketing * 1.0)      # ticketing 5% = 5pts, 7% = 7pts cap
+    risk_score += sla_risk
+    
+    # Contract terms risk component (0-25 points)
+    terms_risk = 0
+    if preavviso < 30:
+        terms_risk += 12                      # very short notice = high risk
+    elif preavviso < 60:
+        terms_risk += 5
+    if durata > 36:
+        terms_risk += 8                       # long lock-in
+    elif durata > 24:
+        terms_risk += 3
+    if canone > 0 and canone < 3000:
+        terms_risk += 5                       # very low revenue contract
+    risk_score += terms_risk
+    
+    # Critical points severity bonus (0-20 points)
+    weights = {'alta': 4, 'media': 2, 'bassa': 1}
+    critical_bonus = sum(weights.get(p.get('gravita', 'bassa'), 1) for p in punti_critici)
+    risk_score += min(20, critical_bonus)
+    
+    # Spelling errors add minor risk (0-5 points)
+    risk_score += min(5, len(errori_ortografici) * 2)
+    
+    # Cap at 95 (never 100% — always some uncertainty)
+    risk_score = min(95, max(5, round(risk_score)))
     
     return {
         'risk_score': risk_score,
