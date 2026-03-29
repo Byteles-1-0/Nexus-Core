@@ -1,5 +1,6 @@
 // src/components/upload/RiskComparisonStep.jsx
 import React from 'react';
+import { api } from '../../utils/api';
 import Card from '../common/Card';
 import Button from '../common/Button';
 import StatCard from '../common/StatCard';
@@ -70,51 +71,32 @@ const RiskComparisonStep = ({ analysisResult, originalRisk, modifications, onBac
     { label: 'Modifiche Applicate', before: 0, after: savedCount, unit: '', positive: true },
   ];
 
-  // Generate downloadable modified contract text
-  const handleDownload = () => {
-    let content = `CONTRATTO MODIFICATO — ${analysisResult?.anagrafica?.cliente_ragione_sociale || 'Cliente'}\n`;
-    content += `Prodotto: ${analysisResult?.prodotto || 'N/A'}\n`;
-    content += `Data: ${new Date().toLocaleDateString('it-IT')}\n`;
-    content += `${'='.repeat(60)}\n\n`;
-
-    content += `ANAGRAFICA\n`;
-    content += `  Ragione Sociale: ${analysisResult?.anagrafica?.cliente_ragione_sociale || 'N/A'}\n`;
-    content += `  Sede Legale: ${analysisResult?.anagrafica?.cliente_sede_legale || 'N/A'}\n\n`;
-
-    content += `DETTAGLI CONTRATTO\n`;
-    content += `  Data Firma: ${det.data_firma || 'N/A'}\n`;
-    content += `  Durata: ${durata} mesi\n`;
-    content += `  Preavviso: ${preavviso} giorni\n\n`;
-
-    content += `SLA\n`;
-    content += `  Credito Uptime: ${uptime}%\n`;
-    content += `  Credito Ticketing: ${ticketing}%\n`;
-    content += `  Tetto Crediti: ${tetto}%\n\n`;
-
-    content += `${'='.repeat(60)}\n`;
-    content += `MODIFICHE APPLICATE (${savedCount})\n`;
-    content += `${'='.repeat(60)}\n\n`;
-
-    (originalRisk.punti_critici || []).filter(p => savedIds.has(p.id)).forEach(p => {
-      const mod = modifications[p.id];
-      content += `[${p.gravita.toUpperCase()}] ${p.sezione}\n`;
-      content += `  Originale: ${p.testo_contratto_originale}\n`;
-      content += `  Modificato: ${mod?.testo_migliorato || 'N/A'}\n`;
-      if (mod?.motivazione) content += `  Motivazione: ${mod.motivazione}\n`;
-      content += `\n`;
-    });
-
-    content += `${'='.repeat(60)}\n`;
-    content += `RISK SCORE: ${origScore}% → ${newScore}%\n`;
-    content += `PUNTI CRITICI: ${origCritical} → ${newCritical}\n`;
-
-    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `contratto_modificato_${(analysisResult?.anagrafica?.cliente_ragione_sociale || 'contratto').replace(/\s+/g, '_')}.txt`;
-    a.click();
-    URL.revokeObjectURL(url);
+  // Generate downloadable modified contract PDF via backend
+  const handleDownload = async () => {
+    try {
+      const res = await api.downloadModifiedPdf(
+        analysisResult,
+        originalRisk,
+        Object.fromEntries(
+          Object.entries(modifications).filter(([_, m]) => m.saved)
+        ),
+        newScore
+      );
+      if (!res.ok) {
+        onShowToast('Errore generazione PDF', 'error');
+        return;
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      const clientName = (analysisResult?.anagrafica?.cliente_ragione_sociale || 'contratto').replace(/\s+/g, '_');
+      a.download = `contratto_modificato_${clientName}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      onShowToast('Errore download PDF', 'error');
+    }
   };
 
   return (
@@ -199,7 +181,7 @@ const RiskComparisonStep = ({ analysisResult, originalRisk, modifications, onBac
           <i className="ri-arrow-left-line"></i> Torna ai Punti Critici
         </Button>
         <Button variant="primary" onClick={handleDownload}>
-          <i className="ri-download-2-line"></i> Scarica Contratto Modificato
+          <i className="ri-file-pdf-2-line"></i> Scarica PDF Modificato
         </Button>
         <Button variant="success" size="lg" onClick={onSave}>
           <i className="ri-save-3-line"></i> Salva Contratto

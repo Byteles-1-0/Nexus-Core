@@ -1,5 +1,6 @@
-from flask import Blueprint, request, jsonify, current_app, send_from_directory
+from flask import Blueprint, request, jsonify, current_app, send_from_directory, send_file
 from werkzeug.utils import secure_filename
+from datetime import datetime
 import os
 
 from extensions import db
@@ -21,12 +22,8 @@ def upload_and_analyze():
     if file.filename == '':
         return jsonify({"status": "error", "message": "Nome file vuoto"}), 400
 
-    # 2. Salvataggio temporaneo
     filename = secure_filename(file.filename)
     filepath = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
-
-    if os.path.exists(filepath):
-        return jsonify({"status": "error", "message": f"Il file '{filename}' è già stato caricato in precedenza."}), 409
 
     file.save(filepath)
 
@@ -77,10 +74,6 @@ def upload_and_analyze_batch():
         filename = secure_filename(file.filename)
         filepath = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
 
-        if os.path.exists(filepath):
-            errors.append({"filename": filename, "error": f"File '{filename}' già caricato in precedenza."})
-            continue
-
         file.save(filepath)
 
         try:
@@ -124,9 +117,6 @@ def upload_file():
 
     filename = secure_filename(file.filename)
     filepath = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
-
-    if os.path.exists(filepath):
-        return jsonify({"status": "error", "message": f"Il file '{filename}' è già stato caricato in precedenza."}), 409
 
     file.save(filepath)
 
@@ -529,3 +519,171 @@ def recalculate_risk():
         return jsonify({"status": "success", "data": result}), 200
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
+
+
+# ==========================================
+# 12. DOWNLOAD MODIFIED CONTRACT PDF (POST)
+# ==========================================
+@contracts_bp.route('/download-modified-pdf', methods=['POST'])
+def download_modified_pdf():
+    """Genera un PDF con il contratto originale e le sezioni modificate evidenziate."""
+    from io import BytesIO
+    from flask import send_file
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib.colors import HexColor
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, HRFlowable
+    from reportlab.lib.units import mm
+    from reportlab.lib.enums import TA_LEFT, TA_CENTER
+    
+    data = request.get_json()
+    contract_data = data.get('contract_data', {})
+    original_risk = data.get('original_risk', {})
+    modifications = data.get('modifications', {})
+    new_risk_score = data.get('new_risk_score', 0)
+    
+    ana = contract_data.get('anagrafica', {})
+    det = contract_data.get('dettagli_contratto', {})
+    sla = contract_data.get('sla', {})
+    prodotto = contract_data.get('prodotto', 'N/A')
+    
+    if 'freader' in prodotto.lower():
+        comm = contract_data.get('commerciale_freader', {})
+        canone_label = 'Canone Trimestrale'
+        canone_val = comm.get('canone_trimestrale', 'N/A')
+    else:
+        comm = contract_data.get('commerciale_cutai', {})
+        canone_label = 'Canone Base Trimestrale'
+        canone_val = comm.get('canone_base_trimestrale', 'N/A')
+    
+    buf = BytesIO()
+    doc = SimpleDocTemplate(buf, pagesize=A4, topMargin=20*mm, bottomMargin=20*mm, leftMargin=20*mm, rightMargin=20*mm)
+    
+    styles = getSampleStyleSheet()
+    styles.add(ParagraphStyle(name='Title2', parent=styles['Title'], fontSize=18, textColor=HexColor('#1E293B'), spaceAfter=6))
+    styles.add(ParagraphStyle(name='SectionHead', parent=styles['Heading2'], fontSize=13, textColor=HexColor('#4F46E5'), spaceBefore=14, spaceAfter=6))
+    styles.add(ParagraphStyle(name='Field', parent=styles['Normal'], fontSize=10, leading=14))
+    styles.add(ParagraphStyle(name='FieldLabel', parent=styles['Normal'], fontSize=9, textColor=HexColor('#64748B'), leading=12))
+    styles.add(ParagraphStyle(name='Modified', parent=styles['Normal'], fontSize=10, leading=14, backColor=HexColor('#ECFDF5'), borderColor=HexColor('#059669'), borderWidth=1, borderPadding=6))
+    styles.add(ParagraphStyle(name='Original', parent=styles['Normal'], fontSize=10, leading=14, backColor=HexColor('#FEF2F2'), textColor=HexColor('#94A3B8')))
+    styles.add(ParagraphStyle(name='SmallNote', parent=styles['Normal'], fontSize=8, textColor=HexColor('#94A3B8'), alignment=TA_CENTER))
+    
+    elements = []
+    
+    # Header
+    elements.append(Paragraph('FOCO — Contract Intelligence', styles['SmallNote']))
+    elements.append(Spacer(1, 4*mm))
+    elements.append(Paragraph(f'Contratto: {ana.get("cliente_ragione_sociale", "N/A")}', styles['Title2']))
+    elements.append(Paragraph(f'Prodotto: {prodotto} | Data: {det.get("data_firma", "N/A")}', styles['Field']))
+    elements.append(Spacer(1, 2*mm))
+    elements.append(HRFlowable(width="100%", thickness=1, color=HexColor('#E2E8F0')))
+    elements.append(Spacer(1, 4*mm))
+    
+    # Risk score comparison
+    orig_score = original_risk.get('risk_score', 0)
+    score_color = '#059669' if new_risk_score < orig_score else '#DC2626'
+    elements.append(Paragraph('Risk Score', styles['SectionHead']))
+    score_data = [
+        ['Prima', 'Dopo', 'Delta'],
+        [f'{orig_score}%', f'{new_risk_score}%', f'{new_risk_score - orig_score:+d}%']
+    ]
+    score_table = Table(score_data, colWidths=[60*mm, 60*mm, 40*mm])
+    score_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), HexColor('#F1F5F9')),
+        ('FONTSIZE', (0, 0), (-1, -1), 10),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('GRID', (0, 0), (-1, -1), 0.5, HexColor('#E2E8F0')),
+        ('TEXTCOLOR', (2, 1), (2, 1), HexColor(score_color)),
+        ('FONTNAME', (0, 1), (-1, 1), 'Helvetica-Bold'),
+        ('TOPPADDING', (0, 0), (-1, -1), 6),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+    ]))
+    elements.append(score_table)
+    elements.append(Spacer(1, 6*mm))
+    
+    # Anagrafica
+    elements.append(Paragraph('Anagrafica', styles['SectionHead']))
+    elements.append(Paragraph(f'<b>Ragione Sociale:</b> {ana.get("cliente_ragione_sociale", "N/A")}', styles['Field']))
+    elements.append(Paragraph(f'<b>Sede Legale:</b> {ana.get("cliente_sede_legale", "N/A")}', styles['Field']))
+    elements.append(Spacer(1, 3*mm))
+    
+    # Dettagli contratto
+    elements.append(Paragraph('Dettagli Contratto', styles['SectionHead']))
+    elements.append(Paragraph(f'<b>Data Firma:</b> {det.get("data_firma", "N/A")}', styles['Field']))
+    elements.append(Paragraph(f'<b>Durata:</b> {det.get("durata_mesi", "N/A")} mesi', styles['Field']))
+    elements.append(Paragraph(f'<b>Preavviso:</b> {det.get("preavviso_giorni", "N/A")} giorni', styles['Field']))
+    elements.append(Spacer(1, 3*mm))
+    
+    # Commerciale
+    elements.append(Paragraph('Condizioni Commerciali', styles['SectionHead']))
+    elements.append(Paragraph(f'<b>{canone_label}:</b> €{canone_val}', styles['Field']))
+    if 'freader' in prodotto.lower():
+        elements.append(Paragraph(f'<b>Fascia 1:</b> {comm.get("prezzo_fascia_1", "N/A")} cent', styles['Field']))
+        elements.append(Paragraph(f'<b>Fascia 2:</b> {comm.get("prezzo_fascia_2", "N/A")} cent', styles['Field']))
+        elements.append(Paragraph(f'<b>Fascia 3:</b> {comm.get("prezzo_fascia_3", "N/A")} cent', styles['Field']))
+    else:
+        elements.append(Paragraph(f'<b>Profilo:</b> {comm.get("profilo_commerciale", "N/A")}', styles['Field']))
+        elements.append(Paragraph(f'<b>Utenti Inclusi:</b> {comm.get("soglia_utenti_inclusi", "N/A")}', styles['Field']))
+        elements.append(Paragraph(f'<b>Fee Extra:</b> €{comm.get("fee_utente_extra", "N/A")}', styles['Field']))
+    elements.append(Spacer(1, 3*mm))
+    
+    # SLA
+    elements.append(Paragraph('SLA', styles['SectionHead']))
+    elements.append(Paragraph(f'<b>Credito Uptime:</b> {sla.get("credito_uptime", "N/A")}%', styles['Field']))
+    elements.append(Paragraph(f'<b>Credito Ticketing:</b> {sla.get("credito_ticketing", "N/A")}%', styles['Field']))
+    elements.append(Paragraph(f'<b>Tetto Crediti:</b> {sla.get("tetto_crediti", "N/A")}%', styles['Field']))
+    elements.append(Spacer(1, 6*mm))
+    
+    # Modifications section
+    punti = original_risk.get('punti_critici', [])
+    modified_ids = set(modifications.keys()) if modifications else set()
+    
+    if modified_ids:
+        elements.append(HRFlowable(width="100%", thickness=2, color=HexColor('#4F46E5')))
+        elements.append(Spacer(1, 4*mm))
+        elements.append(Paragraph('Clausole Modificate', styles['SectionHead']))
+        elements.append(Spacer(1, 2*mm))
+        
+        for p in punti:
+            if p.get('id') not in modified_ids:
+                continue
+            mod = modifications[p['id']]
+            
+            elements.append(Paragraph(f'<b>{p.get("sezione", "")}</b> — Gravità: {p.get("gravita", "").upper()}', styles['Field']))
+            elements.append(Spacer(1, 2*mm))
+            
+            # Original (strikethrough style)
+            elements.append(Paragraph(f'<b>ORIGINALE:</b>', styles['FieldLabel']))
+            elements.append(Paragraph(f'<strike>{p.get("testo_contratto_originale", "")}</strike>', styles['Original']))
+            elements.append(Spacer(1, 2*mm))
+            
+            # Modified (green highlight)
+            elements.append(Paragraph(f'<b>MODIFICATO:</b>', styles['FieldLabel']))
+            elements.append(Paragraph(mod.get('testo_migliorato', ''), styles['Modified']))
+            
+            if mod.get('motivazione'):
+                elements.append(Spacer(1, 1*mm))
+                elements.append(Paragraph(f'<i>Motivazione: {mod["motivazione"]}</i>', styles['FieldLabel']))
+            
+            elements.append(Spacer(1, 5*mm))
+    
+    # Unmodified critical points
+    unmodified = [p for p in punti if p.get('id') not in modified_ids]
+    if unmodified:
+        elements.append(HRFlowable(width="100%", thickness=1, color=HexColor('#E2E8F0')))
+        elements.append(Spacer(1, 4*mm))
+        elements.append(Paragraph('Punti Critici Non Modificati', styles['SectionHead']))
+        for p in unmodified:
+            elements.append(Paragraph(f'• <b>[{p.get("gravita", "").upper()}]</b> {p.get("sezione", "")}: {p.get("spiegazione", "")}', styles['Field']))
+            elements.append(Spacer(1, 2*mm))
+    
+    # Footer
+    elements.append(Spacer(1, 10*mm))
+    elements.append(HRFlowable(width="100%", thickness=0.5, color=HexColor('#CBD5E1')))
+    elements.append(Paragraph(f'Generato da FOCO Contract Intelligence — {datetime.now().strftime("%d/%m/%Y %H:%M")}', styles['SmallNote']))
+    
+    doc.build(elements)
+    buf.seek(0)
+    
+    filename = f'contratto_modificato_{ana.get("cliente_ragione_sociale", "contratto").replace(" ", "_")}.pdf'
+    return send_file(buf, mimetype='application/pdf', as_attachment=True, download_name=filename)
