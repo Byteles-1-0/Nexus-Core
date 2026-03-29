@@ -52,7 +52,11 @@ const RiskComparisonStep = ({ analysisResult, originalRisk, modifications, onBac
   newScore += Math.min(20, criticalBonus);
 
   // No spelling errors after review
-  newScore = Math.min(95, Math.max(5, Math.round(newScore)));
+  // If all critical points resolved, risk is negligible
+  if (remainingPoints.length === 0) {
+    newScore = 0;
+  }
+  newScore = Math.min(95, Math.max(0, Math.round(newScore)));
 
   const origScore = originalRisk.risk_score || 0;
   const origCritical = originalRisk.punti_critici?.length || 0;

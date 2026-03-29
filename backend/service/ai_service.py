@@ -367,8 +367,14 @@ Testo contratto:
     # Spelling errors add minor risk (0-5 points)
     risk_score += min(5, len(errori_ortografici) * 2)
     
-    # Cap at 95 (never 100% — always some uncertainty)
-    risk_score = min(95, max(5, round(risk_score)))
+    # If no critical points found, risk is negligible
+    if not punti_critici and not errori_ortografici:
+        risk_score = 0
+    elif not punti_critici:
+        risk_score = min(risk_score, 1)
+    
+    # Cap at 95
+    risk_score = min(95, max(0, round(risk_score)))
     
     return {
         'risk_score': risk_score,
