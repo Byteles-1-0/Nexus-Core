@@ -215,7 +215,7 @@ ul { list-style: none; }
     align-items: center;
     justify-content: space-between;
     border-bottom: 1px solid var(--border-color);
-    background: rgba(17, 24, 39, 0.8);
+    background: #FFFFFF;
     backdrop-filter: blur(12px);
     position: sticky;
     top: 0;
