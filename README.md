@@ -7,6 +7,8 @@
 [![React](https://img.shields.io/badge/React-18.3-61dafb.svg)](https://reactjs.org/)
 [![Flask](https://img.shields.io/badge/Flask-3.0-black.svg)](https://flask.palletsprojects.com/)
 
+**[Link Presentazione](https://drive.google.com/file/d/1ApmxO1isl4cg6EODcL4PbDq5PAVhoEyA/view?usp=sharing)**
+
 ## 📋 Indice
 
 - [Panoramica](#-panoramica)
